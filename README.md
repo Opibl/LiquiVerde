@@ -162,6 +162,22 @@ También se muestra una comparación entre la lista original y la lista
 optimizada para identificar productos eliminados.
 
 
+USO DE LA APLICACIÓN
+-------------------
+
+1. El usuario selecciona productos desde el catálogo
+2. Define la cantidad de cada producto
+3. Ingresa un presupuesto máximo
+4. El sistema genera una lista optimizada
+5. Se muestran:
+   - Lista original
+   - Lista optimizada
+   - Ahorro
+   - Puntaje de sostenibilidad
+6. El usuario puede aceptar sustituciones sugeridas
+
+
+
 USO DE IA
 ---------
 
@@ -174,4 +190,5 @@ de apoyo, principalmente para:
 
 Toda la arquitectura, decisiones de diseño, implementación y código
 final fueron realizados y validados por el autor.
+
 
