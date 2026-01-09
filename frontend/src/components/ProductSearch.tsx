@@ -2,9 +2,6 @@ import { useState } from 'react'
 import type { Product } from '../types/Product'
 import '../css/ProductSearch.css'
 
-/* =========================
-   TIPOS
-========================= */
 type SelectedProduct = {
   id: number
   name: string
@@ -20,7 +17,7 @@ interface Props {
   onRemoveAll: (id: number) => void
 }
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 12
 
 const ProductSearch: React.FC<Props> = ({
   products,
@@ -32,16 +29,10 @@ const ProductSearch: React.FC<Props> = ({
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  /* =========================
-     FILTRADO
-  ========================= */
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  /* =========================
-     PAGINACIÓN
-  ========================= */
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const start = (page - 1) * ITEMS_PER_PAGE
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
@@ -63,60 +54,65 @@ const ProductSearch: React.FC<Props> = ({
         onChange={e => handleSearch(e.target.value)}
       />
 
-      <ul className="product-list">
+      <div className="product-grid">
         {paginated.map(p => {
           const selectedItem = getSelected(p.id)
 
           return (
-            <li key={p.id} className="product-item">
-              <span className="product-name">
-                {p.name}
-                <span className="product-price">
-                  {' '}
+            <div key={p.id} className="product-card">
+              <img
+                src={p.imageUrl || '/img/placeholder.png'}
+                alt={p.name}
+                className="product-image"
+              />
+
+              <div className="product-info">
+                <h3>{p.name}</h3>
+                <p className="product-price">
                   ${p.unitPrice.toLocaleString('es-CL')}
-                </span>
-              </span>
+                </p>
 
-              {!selectedItem ? (
-                <button
-                  className="product-add-btn"
-                  onClick={() => onAdd(p)}
-                >
-                  Agregar
-                </button>
-              ) : (
-                <div className="product-qty">
+                {!selectedItem ? (
                   <button
-                    className="qty-btn"
-                    onClick={() => onRemove(p.id)}
-                  >
-                    −
-                  </button>
-
-                  <span className="qty-value">
-                    x{selectedItem.quantity}
-                  </span>
-
-                  <button
-                    className="qty-btn"
+                    className="product-add-btn"
                     onClick={() => onAdd(p)}
                   >
-                    +
+                    Agregar
                   </button>
+                ) : (
+                  <div className="product-qty">
+                    <button
+                      className="qty-btn"
+                      onClick={() => onRemove(p.id)}
+                    >
+                      −
+                    </button>
 
-                  <button
-                    className="remove-all-btn"
-                    onClick={() => onRemoveAll(p.id)}
-                    title="Eliminar producto"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              )}
-            </li>
+                    <span className="qty-value">
+                      {selectedItem.quantity}
+                    </span>
+
+                    <button
+                      className="qty-btn"
+                      onClick={() => onAdd(p)}
+                    >
+                      +
+                    </button>
+
+                    <button
+                      className="remove-all-btn"
+                      onClick={() => onRemoveAll(p.id)}
+                      title="Eliminar producto"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           )
         })}
-      </ul>
+      </div>
 
       {totalPages > 1 && (
         <div className="pagination">

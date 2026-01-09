@@ -20,7 +20,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     throw new Error('Formato inválido del backend')
   }
 
-  // Normalización
+  // ✅ NORMALIZACIÓN CORRECTA
   return data.products.map((p: any) => ({
     id: p.id,
     name: p.name,
@@ -28,5 +28,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
     ecoScore: p.ecoScore,
     socialScore: p.socialScore,
     category: p.category,
+    imageUrl: p.image_url, 
   }))
 }
