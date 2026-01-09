@@ -516,3 +516,21 @@ input[type="number"] {
     text-align: center;
   }
 }
+
+.sub-product {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.sub-image {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #222;
+}
+
+.sub-info p {
+  margin: 0;
+}

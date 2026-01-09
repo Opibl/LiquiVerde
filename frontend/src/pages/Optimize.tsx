@@ -23,7 +23,9 @@ type OptimizedProduct = {
   totalPrice: number
   ecoScore?: number
   socialScore?: number
+  imageUrl?: string
 }
+
 
 type Substitution = {
   fromId: number
@@ -140,8 +142,10 @@ const Optimize: React.FC = () => {
           totalPrice: p.price * p.quantity,
           ecoScore: p.eco_score,
           socialScore: p.social_score,
+          imageUrl: p.image_url,
         })
       )
+
 
       setResult(normalized)
       setOriginalTotal(data.originalTotal)
@@ -160,7 +164,9 @@ const Optimize: React.FC = () => {
               s.toProduct.price * (s.quantity ?? 1),
             ecoScore: s.toProduct.eco_score,
             socialScore: s.toProduct.social_score,
+            imageUrl: s.toProduct.image_url,
           },
+
         }))
 
       setSubstitutions(normalizedSubstitutions)
@@ -169,23 +175,19 @@ const Optimize: React.FC = () => {
       alert('Error al optimizar la compra')
     }
   }
-  /* =========================
-   ACEPTAR SUSTITUCIÓN
-  ========================= */
-  const acceptSubstitution = (s: Substitution) => {
-    const updatedSelected: SelectedProduct[] = selected.map(p =>
+ const acceptSubstitution = (s: Substitution) => {
+    const updatedResult: OptimizedProduct[] = result.map(p =>
       p.id === s.fromId
         ? {
-            id: s.toProduct.id,
-            name: s.toProduct.name,
-            unitPrice: s.toProduct.unitPrice,
+            ...s.toProduct,
             quantity: p.quantity,
+            totalPrice: s.toProduct.unitPrice * p.quantity,
           }
         : p
     )
 
-    const newTotal = updatedSelected.reduce(
-      (sum, p) => sum + p.unitPrice * p.quantity,
+    const newTotal = updatedResult.reduce(
+      (sum, p) => sum + p.totalPrice,
       0
     )
 
@@ -194,9 +196,23 @@ const Optimize: React.FC = () => {
       return
     }
 
-    setSelected(updatedSelected)
-    optimize(updatedSelected)
+    setResult(updatedResult)
+
+    setSelected(
+      updatedResult.map(p => ({
+        id: p.id,
+        name: p.name,
+        unitPrice: p.unitPrice,
+        quantity: p.quantity,
+      }))
+    )
+
+    // ✅ ELIMINAR la sustitución aceptada
+    setSubstitutions(prev =>
+      prev.filter(sub => sub.fromId !== s.fromId)
+    )
   }
+
 
 
   /* =========================
@@ -348,18 +364,28 @@ const Optimize: React.FC = () => {
 
           {substitutions.map((s, i) => (
             <div key={i} className="sub-card">
-              <p>
-                Reemplazar <strong>{s.fromName}</strong> por{' '}
-                <strong>{s.toProduct.name}</strong>
-              </p>
-              <p className="sub-reason">{s.reason}</p>
+              <div className="sub-product">
+                <img
+                  src={s.toProduct.imageUrl || '/img/placeholder.png'}
+                  alt={s.toProduct.name}
+                  className="sub-image"
+                />
 
-              <button
-                className="accept-sub-btn"
-                onClick={() => acceptSubstitution(s)}
-              >
-                Aceptar sustitución
-              </button>
+                <div className="sub-info">
+                  <p>
+                    Reemplazar <strong>{s.fromName}</strong> por{' '}
+                    <strong>{s.toProduct.name}</strong>
+                  </p>
+                  <p className="sub-reason">{s.reason}</p>
+
+                  <button
+                    className="accept-sub-btn"
+                    onClick={() => acceptSubstitution(s)}
+                  >
+                    Aceptar sustitución
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </section>
