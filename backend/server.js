@@ -222,59 +222,69 @@ const detectSubstitutions = (optimized, allProducts) => {
 ====================================================== */
 
 app.get('/api/products', async (_, res) => {
-  const r = await pool.query(
-    'SELECT id,name,price,eco_score AS "ecoScore",social_score AS "socialScore",category,image_url FROM products LIMIT 2000'
-  )
-  res.json({ products: r.rows })
+  try {
+    const r = await pool.query(
+      'SELECT id,name,price,eco_score AS "ecoScore",social_score AS "socialScore",category,image_url FROM products LIMIT 2000'
+    )
+    res.json({ products: r.rows })
+  } catch (err) {
+    console.error('API /products error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
 
+
 app.post('/api/seed-openfood', async (_, res) => {
-  await pool.query('TRUNCATE TABLE products RESTART IDENTITY CASCADE')
+  try {
+    await pool.query('TRUNCATE TABLE products RESTART IDENTITY CASCADE')
 
-  const response = await fetch(OPEN_FOOD_URL, {
-    headers: { 'User-Agent': 'LiquiVerde/1.0' },
-  })
-
-  const data = await response.json()
-  const seen = new Set()
-
-  const products = data.products
-    .filter(p => p.product_name)
-    .map(p => {
-      const name = p.product_name_es || p.product_name
-      const norm = normalizeName(name)
-      if (!norm || seen.has(norm)) return null
-      seen.add(norm)
-
-      return {
-        name,
-        normalized_name: norm,
-        price: estimateChileanPrice(p),
-        eco_score: estimateEcoScore(p),
-        social_score: estimateSocialScore(p),
-        category: getMainCategory(p.categories_tags),
-        image_url:
-          p.image_front_url ||
-          p.image_url ||
-          p.image_small_url ||
-          null,
-      }
-
+    const response = await fetch(OPEN_FOOD_URL, {
+      headers: { 'User-Agent': 'LiquiVerde/1.0' },
     })
-    .filter(Boolean)
-    .slice(0, 2000)
 
-  for (const p of products) {
-    await pool.query(
-      `INSERT INTO products 
-        (name, normalized_name, price, eco_score, social_score, category, image_url)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-        ON CONFLICT (normalized_name) DO NOTHING`,
-      Object.values(p)
-    )
+    const data = await response.json()
+    const seen = new Set()
+
+    const products = data.products
+      .filter(p => p.product_name)
+      .map(p => {
+        const name = p.product_name_es || p.product_name
+        const norm = normalizeName(name)
+        if (!norm || seen.has(norm)) return null
+        seen.add(norm)
+
+        return {
+          name,
+          normalized_name: norm,
+          price: estimateChileanPrice(p),
+          eco_score: estimateEcoScore(p),
+          social_score: estimateSocialScore(p),
+          category: getMainCategory(p.categories_tags),
+          image_url:
+            p.image_front_url ||
+            p.image_url ||
+            p.image_small_url ||
+            null,
+        }
+      })
+      .filter(Boolean)
+      .slice(0, 2000)
+
+    for (const p of products) {
+      await pool.query(
+        `INSERT INTO products 
+         (name, normalized_name, price, eco_score, social_score, category, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
+         ON CONFLICT (normalized_name) DO NOTHING`,
+        Object.values(p)
+      )
+    }
+
+    res.json({ inserted: products.length })
+  } catch (err) {
+    console.error('API /seed-openfood error:', err)
+    res.status(500).json({ error: err.message })
   }
-
-  res.json({ inserted: products.length })
 })
 
 app.post('/api/optimize', async (req, res) => {
