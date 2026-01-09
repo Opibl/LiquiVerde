@@ -30,13 +30,10 @@ type OptimizedProduct = {
 type Substitution = {
   fromId: number
   fromName: string
-  toProduct: {
-    id: number
-    name: string
-    unitPrice: number
-  }
+  toProduct: OptimizedProduct
   reason: string
 }
+
 
 const Optimize: React.FC = () => {
   const [budgetDraft, setBudgetDraft] = useState('')
@@ -175,7 +172,8 @@ const Optimize: React.FC = () => {
             id: s.toProduct.id,
             name: s.toProduct.name,
             unitPrice: s.toProduct.unitPrice,
-            quantity: p.quantity,
+            quantity: p.quantity, // se conserva cantidad
+            totalPrice: s.toProduct.unitPrice * p.quantity,
           }
         : p
     )
@@ -193,6 +191,7 @@ const Optimize: React.FC = () => {
     setSelected(updatedSelected)
     optimize(updatedSelected)
   }
+
 
 
 
