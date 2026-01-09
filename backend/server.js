@@ -85,11 +85,11 @@ const estimateEcoScore = (p) => {
   return Math.max(20, Math.min(score, 95))
 }
 
-// 🆕 Categoría principal (para sustituciones del mismo tipo)
+// Categoría principal (para sustituciones del mismo tipo)
 const getMainCategory = (categories = []) => {
   const c = categories.join(' ').toLowerCase()
 
-  // 🥛 LÁCTEOS
+  //LÁCTEOS
   if (
     c.includes('milk') ||
     c.includes('dairy') ||
@@ -97,14 +97,14 @@ const getMainCategory = (categories = []) => {
     c.includes('yogurt')
   ) return 'dairy'
 
-  // 🍞 PANADERÍA
+  // PANADERÍA
   if (
     c.includes('bread') ||
     c.includes('bakery') ||
     c.includes('toast')
   ) return 'bakery'
 
-  // 🍪 GALLETAS / SNACKS DULCES
+  //  GALLETAS / SNACKS DULCES
   if (
     c.includes('biscuits') ||
     c.includes('cookies') ||
@@ -114,7 +114,7 @@ const getMainCategory = (categories = []) => {
     c.includes('candy')
   ) return 'snacks'
 
-  // 🥤 BEBIDAS
+  // BEBIDAS
   if (
     c.includes('beverage') ||
     c.includes('drinks') ||
@@ -123,19 +123,19 @@ const getMainCategory = (categories = []) => {
     c.includes('soda')
   ) return 'beverages'
 
-  // 🌾 CEREALES
+  //  CEREALES
   if (
     c.includes('cereal') ||
     c.includes('breakfast')
   ) return 'cereals'
 
-  // 🍚 ARROZ / GRANOS
+  // ARROZ / GRANOS
   if (
     c.includes('rice') ||
     c.includes('grains')
   ) return 'grains'
 
-  // 🫘 LEGUMBRES
+  //  LEGUMBRES
   if (
     c.includes('legume') ||
     c.includes('lentils') ||
@@ -143,19 +143,19 @@ const getMainCategory = (categories = []) => {
     c.includes('chickpeas')
   ) return 'legumes'
 
-  // 🥫 CONSERVAS
+  //  CONSERVAS
   if (
     c.includes('canned') ||
     c.includes('preserved')
   ) return 'canned'
 
-  // 🛢️ ACEITES Y GRASAS
+  // ACEITES Y GRASAS
   if (
     c.includes('oil') ||
     c.includes('fat')
   ) return 'oils'
 
-  // 🥩 CARNES
+  // CARNES
   if (
     c.includes('meat') ||
     c.includes('beef') ||
@@ -163,20 +163,20 @@ const getMainCategory = (categories = []) => {
     c.includes('pork')
   ) return 'meat'
 
-  // 🐟 PESCADOS
+  // PESCADOS
   if (
     c.includes('fish') ||
     c.includes('seafood')
   ) return 'seafood'
 
-  // 🥦 FRUTAS Y VERDURAS
+  // FRUTAS Y VERDURAS
   if (
     c.includes('fruit') ||
     c.includes('vegetable') ||
     c.includes('veggie')
   ) return 'produce'
 
-  // 🧂 OTROS
+  // OTROS
   return 'other'
 }
 
@@ -188,20 +188,20 @@ const estimateSocialScore = (p) => {
   const nova = p.nova_groups_tags || []
   const lang = p.lang || ''
 
-  /* 🌍 Origen / cercanía */
+  /* Origen / cercanía */
   if (countries.includes('en:chile')) score += 20
   else if (countries.length > 0) score += 10
 
-  /* 🏷️ Certificaciones sociales */
+  /* Certificaciones sociales */
   if (labels.some(l => l.includes('fair-trade'))) score += 20
   if (labels.some(l => l.includes('organic'))) score += 10
   if (labels.some(l => l.includes('local'))) score += 10
 
-  /* 🏭 Nivel de procesamiento */
+  /* Nivel de procesamiento */
   if (nova.includes('en:nova-group-4')) score -= 20 // ultraprocesado
   if (nova.includes('en:nova-group-1')) score += 10 // sin procesar
 
-  /* 🗣️ Idioma local */
+  /* Idioma local */
   if (lang === 'es') score += 5
 
   return Math.max(30, Math.min(score, 95))
