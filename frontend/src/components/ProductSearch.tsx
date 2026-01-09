@@ -22,12 +22,12 @@ const ProductSearch: React.FC<Props> = ({
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  // 🔍 Filtrado
+  // Filtrado
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  // 📄 Paginación
+  // Paginación
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const start = (page - 1) * ITEMS_PER_PAGE
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)

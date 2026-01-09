@@ -4,7 +4,7 @@ interface DashboardProduct {
   id: number
   name: string
   quantity: number
-  totalPrice: number   // ✅ precio total por producto
+  totalPrice: number   
   ecoScore?: number
 }
 

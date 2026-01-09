@@ -4,8 +4,8 @@ type FinalItem = {
   id: number
   name: string
   quantity: number
-  unitPrice: number     // ✅ precio unitario
-  totalPrice: number    // ✅ subtotal por producto
+  unitPrice: number    
+  totalPrice: number    
 }
 
 type Props = {

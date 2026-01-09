@@ -103,7 +103,7 @@ const Optimize: React.FC = () => {
     }
 
 
-    // 👇 guardar snapshot de la lista original
+    // guardar snapshot de la lista original
     
     setOriginalList(overrideSelected || selected)
     
@@ -243,7 +243,7 @@ const Optimize: React.FC = () => {
 
         {originalList.length > 0 && (
           <section className="card">
-            <h2>🧾 Lista original</h2>
+            <h2>Lista original</h2>
 
             <table>
               <thead>
