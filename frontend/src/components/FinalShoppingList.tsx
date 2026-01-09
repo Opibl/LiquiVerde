@@ -4,8 +4,8 @@ type FinalItem = {
   id: number
   name: string
   quantity: number
-  unitPrice: number    
-  totalPrice: number    
+  unitPrice: number
+  totalPrice: number
 }
 
 type Props = {
@@ -42,10 +42,19 @@ const FinalShoppingList: React.FC<Props> = ({ products }) => {
         <tbody>
           {products.map(p => (
             <tr key={p.id}>
-              <td>{p.name}</td>
-              <td>x{p.quantity}</td>
-              <td>{formatCLP(p.unitPrice)}</td>
-              <td>{formatCLP(p.totalPrice)}</td>
+              <td data-label="Producto">{p.name}</td>
+
+              <td data-label="Cantidad">
+                x{p.quantity}
+              </td>
+
+              <td data-label="Precio unitario">
+                {formatCLP(p.unitPrice)}
+              </td>
+
+              <td data-label="Subtotal">
+                {formatCLP(p.totalPrice)}
+              </td>
             </tr>
           ))}
         </tbody>

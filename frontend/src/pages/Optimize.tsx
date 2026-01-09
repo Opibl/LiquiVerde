@@ -6,9 +6,7 @@ import Dashboard from '../components/Dashboard'
 import '../css/Optimize.css'
 import FinalShoppingList from '../components/FinalShoppingList'
 
-
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
-
 
 type SelectedProduct = {
   id: number
@@ -34,7 +32,6 @@ type Substitution = {
   reason: string
 }
 
-
 const Optimize: React.FC = () => {
   const [budgetDraft, setBudgetDraft] = useState('')
   const [budget, setBudget] = useState<number | null>(null)
@@ -51,6 +48,7 @@ const Optimize: React.FC = () => {
   const [budgetConfirmed, setBudgetConfirmed] = useState(false)
   const [originalList, setOriginalList] = useState<SelectedProduct[]>([])
 
+  const hasResult = result.length > 0
 
   /* =========================
      Cargar productos
@@ -82,13 +80,12 @@ const Optimize: React.FC = () => {
         {
           id: product.id,
           name: product.name,
-          unitPrice: product.unitPrice, // ✅ CLAVE
+          unitPrice: product.unitPrice,
           quantity: 1,
         },
       ])
     }
   }
-
 
   const removeProduct = (id: number) => {
     setSelected(
@@ -104,10 +101,8 @@ const Optimize: React.FC = () => {
     setSelected(selected.filter(p => p.id !== id))
   }
 
-  
-
   /* =========================
-     OPTIMIZACIÓN (BACKEND)
+     OPTIMIZACIÓN
   ========================= */
   const optimize = async (overrideSelected?: SelectedProduct[]) => {
     if (!budget) {
@@ -115,12 +110,7 @@ const Optimize: React.FC = () => {
       return
     }
 
-
-    // guardar snapshot de la lista original
-    
     setOriginalList(overrideSelected || selected)
-    
-
 
     const itemsToSend = (overrideSelected || selected).map(p => ({
       id: p.id,
@@ -146,8 +136,8 @@ const Optimize: React.FC = () => {
           id: p.id,
           name: p.name,
           quantity: p.quantity,
-          unitPrice: p.price,                 // precio unitario
-          totalPrice: p.price * p.quantity,   // total por producto
+          unitPrice: p.price,
+          totalPrice: p.price * p.quantity,
           ecoScore: p.eco_score,
           socialScore: p.social_score,
         })
@@ -155,34 +145,32 @@ const Optimize: React.FC = () => {
 
       setResult(normalized)
       setOriginalTotal(data.originalTotal)
+
       const normalizedSubstitutions: Substitution[] =
-          (data.substitutions || []).map((s: any) => ({
-            fromId: s.fromId,
-            fromName: s.fromName,
-            reason: s.reason,
-            toProduct: {
-              id: s.toProduct.id,
-              name: s.toProduct.name,
-              quantity: s.quantity ?? 1, // o la que corresponda
-              unitPrice: s.toProduct.price,
-              totalPrice:
-                s.toProduct.price *
-                (s.quantity ?? 1),
-              ecoScore: s.toProduct.eco_score,
-              socialScore: s.toProduct.social_score,
-            },
-          }))
+        (data.substitutions || []).map((s: any) => ({
+          fromId: s.fromId,
+          fromName: s.fromName,
+          reason: s.reason,
+          toProduct: {
+            id: s.toProduct.id,
+            name: s.toProduct.name,
+            quantity: s.quantity ?? 1,
+            unitPrice: s.toProduct.price,
+            totalPrice:
+              s.toProduct.price * (s.quantity ?? 1),
+            ecoScore: s.toProduct.eco_score,
+            socialScore: s.toProduct.social_score,
+          },
+        }))
 
-        setSubstitutions(normalizedSubstitutions)
-
+      setSubstitutions(normalizedSubstitutions)
     } catch (err) {
       console.error(err)
       alert('Error al optimizar la compra')
     }
   }
-
   /* =========================
-     ACEPTAR SUSTITUCIÓN (OPCIÓN B)
+   ACEPTAR SUSTITUCIÓN
   ========================= */
   const acceptSubstitution = (s: Substitution) => {
     const updatedSelected: SelectedProduct[] = selected.map(p =>
@@ -191,8 +179,7 @@ const Optimize: React.FC = () => {
             id: s.toProduct.id,
             name: s.toProduct.name,
             unitPrice: s.toProduct.unitPrice,
-            quantity: p.quantity, // se conserva cantidad
-            totalPrice: s.toProduct.unitPrice * p.quantity,
+            quantity: p.quantity,
           }
         : p
     )
@@ -210,8 +197,6 @@ const Optimize: React.FC = () => {
     setSelected(updatedSelected)
     optimize(updatedSelected)
   }
-
-
 
 
   /* =========================
@@ -280,7 +265,7 @@ const Optimize: React.FC = () => {
           )}
         </section>
 
-        {originalList.length > 0 && (
+        {!hasResult && originalList.length > 0 && (
           <section className="card">
             <h2>Lista original</h2>
 
@@ -308,19 +293,14 @@ const Optimize: React.FC = () => {
                         opacity: stillPresent ? 1 : 0.5,
                       }}
                     >
-                      <td>{p.name}</td>
-                      <td>x{p.quantity}</td>
-                      <td>{p.unitPrice}</td>
-                      <td>
+                      <td data-label="Producto">{p.name}</td>
+                      <td data-label="Cantidad">x{p.quantity}</td>
+                      <td data-label="Precio unitario">{p.unitPrice}</td>
+                      <td data-label="Total">
                         {(p.unitPrice * p.quantity).toLocaleString('es-CL')}
                       </td>
-
-                      <td>
-                        {stillPresent ? (
-                          '✔️ Optimizado'
-                        ) : (
-                          '❌ Eliminado'
-                        )}
+                      <td data-label="Estado">
+                        {stillPresent ? '✔️ Optimizado' : '❌ Eliminado'}
                       </td>
                     </tr>
                   )
@@ -330,7 +310,6 @@ const Optimize: React.FC = () => {
           </section>
         )}
 
-
         <button
           className="optimize-btn"
           onClick={() => optimize()}
@@ -339,19 +318,19 @@ const Optimize: React.FC = () => {
           Optimizar compra sostenible
         </button>
 
-        {result.length > 0 && budget !== null && (
+        {hasResult && (
           <section className="card">
             <h2>3️⃣ Dashboard de impacto</h2>
             <Dashboard
               products={result}
-              budget={budget}
+              budget={budget!}
               originalTotal={originalTotal}
             />
           </section>
         )}
       </div>
 
-      {result.length > 0 && (
+      {hasResult && (
         <FinalShoppingList
           products={result.map(p => ({
             id: p.id,
@@ -363,7 +342,7 @@ const Optimize: React.FC = () => {
         />
       )}
 
-      {substitutions.length > 0 && (
+      {hasResult && substitutions.length > 0 && (
         <section className="card">
           <h2>🔁 Sugerencias de sustitución</h2>
 
@@ -384,6 +363,27 @@ const Optimize: React.FC = () => {
             </div>
           ))}
         </section>
+      )}
+
+      {hasResult && originalList.length > 0 && (
+        <details className="card">
+          <summary>Ver lista original</summary>
+
+          <table>
+            <tbody>
+              {originalList.map(p => (
+                <tr key={p.id}>
+                  <td data-label="Producto">{p.name}</td>
+                  <td data-label="Cantidad">x{p.quantity}</td>
+                  <td data-label="Precio unitario">{p.unitPrice}</td>
+                  <td data-label="Total">
+                    {(p.unitPrice * p.quantity).toLocaleString('es-CL')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
       )}
     </main>
   )

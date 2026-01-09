@@ -1,10 +1,29 @@
 import '../css/Dashboard.css'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+import { Bar, Pie } from 'react-chartjs-2'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend
+)
 
 interface DashboardProduct {
   id: number
   name: string
   quantity: number
-  totalPrice: number   
+  totalPrice: number
   ecoScore?: number
 }
 
@@ -34,7 +53,7 @@ const Dashboard: React.FC<Props> = ({
   )
 
   /* =========================
-     Eco score promedio (ponderado)
+     Eco score promedio
   ========================= */
   const ecoAvgRaw =
     products.reduce(
@@ -45,10 +64,7 @@ const Dashboard: React.FC<Props> = ({
       0
     ) / (totalUnits || 1)
 
-  const ecoAvg = Math.min(
-    100,
-    Math.max(0, ecoAvgRaw)
-  )
+  const ecoAvg = Math.min(100, Math.max(0, ecoAvgRaw))
 
   /* =========================
      Utils
@@ -59,6 +75,39 @@ const Dashboard: React.FC<Props> = ({
       currency: 'CLP',
       maximumFractionDigits: 0,
     })
+
+  /* =========================
+     DATA CHARTS
+  ========================= */
+
+  // Gráfico barras
+  const spendingData = {
+    labels: ['Original', 'Optimizado'],
+    datasets: [
+      {
+        label: 'Gasto',
+        data: [originalTotal, optimizedTotal],
+        backgroundColor: ['#ef4444', '#22c55e'],
+      },
+    ],
+  }
+
+  // Gráfico torta
+  const distributionData = {
+    labels: products.map(p => p.name),
+    datasets: [
+      {
+        data: products.map(p => p.totalPrice),
+        backgroundColor: [
+          '#4ade80',
+          '#22c55e',
+          '#16a34a',
+          '#15803d',
+          '#166534',
+        ],
+      },
+    ],
+  }
 
   /* =========================
      UI
@@ -94,13 +143,20 @@ const Dashboard: React.FC<Props> = ({
         </div>
       </section>
 
+      {/* ===== GRÁFICO BARRAS ===== */}
+      <section className="chart">
+        <h3>Comparación de gasto</h3>
+        <Bar data={spendingData} />
+      </section>
+
       {/* Impacto ambiental */}
       <section className="impact">
         <h3>Impacto ambiental de la compra</h3>
 
-        <div className="bar">
+        {/* Barra de impacto */}
+        <div className="impact-bar">
           <div
-            className="bar-fill"
+            className="impact-bar-fill"
             style={{ width: `${ecoAvg}%` }}
           />
         </div>
@@ -116,6 +172,7 @@ const Dashboard: React.FC<Props> = ({
           </strong>
         </p>
       </section>
+
 
       {/* Tabla final */}
       <section className="table">
@@ -134,14 +191,24 @@ const Dashboard: React.FC<Props> = ({
           <tbody>
             {products.map(p => (
               <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>x{p.quantity}</td>
-                <td>{formatCLP(p.totalPrice)}</td>
-                <td>{p.ecoScore ?? '-'}</td>
+                <td data-label="Producto">{p.name}</td>
+                <td data-label="Cantidad">x{p.quantity}</td>
+                <td data-label="Total">
+                  {formatCLP(p.totalPrice)}
+                </td>
+                <td data-label="Eco score">
+                  {p.ecoScore ?? '-'}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </section>
+
+      {/* ===== GRÁFICO TORTA ===== */}
+      <section className="chart">
+        <h3>Distribución del gasto</h3>
+        <Pie data={distributionData} />
       </section>
 
       {/* Nota */}
