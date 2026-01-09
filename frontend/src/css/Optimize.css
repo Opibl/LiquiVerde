@@ -1,0 +1,483 @@
+.optimize {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1b1f1d, #0f1211);
+  color: #ffffff;
+  padding: 3rem 1.5rem;
+}
+
+.optimize-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.optimize-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.optimize-header h1 {
+  font-size: 2.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.optimize-header p {
+  color: #b0b7b3;
+}
+
+/* =========================
+   Cards
+========================= */
+
+.card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.card h2 {
+  margin-bottom: 1rem;
+  color: #7ddc89;
+}
+
+/* =========================
+   Inputs
+========================= */
+
+input[type="number"],
+input[type="text"] {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: none;
+  background: #1f2422;
+  color: white;
+  font-size: 1rem;
+}
+
+input:focus {
+  outline: 2px solid #43a047;
+}
+
+/* =========================
+   Chips
+========================= */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(67, 160, 71, 0.15);
+  color: #7ddc89;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.chip button {
+  background: none;
+  border: none;
+  color: #7ddc89;
+  cursor: pointer;
+}
+
+.chip button:hover {
+  color: #ff6b6b;
+}
+
+/* =========================
+   Botón principal
+========================= */
+
+.optimize-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.optimize-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(67, 160, 71, 0.3);
+}
+
+.optimize-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Botón AGREGAR
+========================= */
+
+.product-add-btn {
+  margin-left: 0.5rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.product-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 160, 71, 0.35);
+}
+
+.product-add-btn:active {
+  transform: scale(0.95);
+}
+
+/* =========================
+   Quitar flechas input number
+========================= */
+
+/* Chrome, Edge, Safari */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* =========================
+   Presupuesto – A LA IZQUIERDA
+========================= */
+
+.budget-input {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.budget-input input {
+  max-width: 260px;
+  text-align: left;
+}
+
+/* Botón confirmar presupuesto */
+.confirm-budget-btn {
+  display: inline-block;
+  margin: 0;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+  box-shadow: 0 6px 14px rgba(67, 160, 71, 0.35);
+}
+
+/* Hover */
+.confirm-budget-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(67, 160, 71, 0.45);
+}
+
+/* Active */
+.confirm-budget-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Disabled */
+.confirm-budget-btn:disabled {
+  background: #2a2f2d;
+  color: #7a837f;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Presupuesto confirmado */
+.budget-confirmed {
+  margin-top: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #7ddc89;
+}
+
+/* =========================
+   Lista de productos agregados
+========================= */
+
+.selected-list {
+  margin-top: 1.5rem;
+}
+
+.selected-title {
+  margin-bottom: 0.8rem;
+  color: #7ddc89;
+  font-weight: 600;
+}
+
+/* =========================
+   Lista de productos agregados
+========================= */
+
+.selected-items {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.selected-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.selected-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.selected-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.selected-qty {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Reutiliza los botones verdes */
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qty-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
+}
+
+.remove-btn {
+  margin-left: 0.3rem;
+  border: none;
+  background: transparent;
+  color: #ff6b6b;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.remove-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Presupuesto */
+.card h2 {
+  margin-bottom: 1rem;
+}
+
+.card input[type="number"] {
+  margin-bottom: 1rem;
+}
+
+.confirm-budget-btn {
+  margin-top: 0.5rem;
+}
+
+
+/* =========================
+   Sustituciones
+========================= */
+
+.sub-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sub-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e5eae7;
+}
+
+/* Botón aceptar sustitución */
+.accept-sub-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.accept-sub-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(67, 160, 71, 0.35);
+}
+
+.accept-sub-btn:active {
+  transform: scale(0.96);
+}
+
+
+/* =========================
+   LISTA ORIGINAL
+========================= */
+
+.original-list,
+.card table {
+  width: 100%;
+}
+
+.card h2 {
+  margin-bottom: 1rem;
+}
+
+/* =========================
+   TABLA
+========================= */
+
+.card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.card table thead th {
+  text-align: left;
+  padding: 0.75rem;
+  color: #cbd5e1;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.card table tbody td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================
+   ESTADOS VISUALES
+========================= */
+
+.card table tbody tr {
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.card table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.card table tbody tr[style*="opacity: 0.5"] {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.card table tbody tr:not([style*="opacity: 0.5"]) {
+  background: rgba(34, 197, 94, 0.04);
+}
+
+/* =========================
+   TEXTO DE ESTADO
+========================= */
+
+.card table td:last-child {
+  font-weight: 600;
+}
+
+.card table td:last-child:has(:contains("Optimizado")) {
+  color: #22c55e;
+}
+
+.card table td:last-child:has(:contains("Eliminado")) {
+  color: #ef4444;
+}
+
+/* =========================
+   NUMÉRICOS
+========================= */
+
+.card table td:nth-child(2),
+.card table td:nth-child(3),
+.card table td:nth-child(4) {
+  white-space: nowrap;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+  .card table thead {
+    display: none;
+  }
+
+  .card table tbody tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+  }
+
+  .card table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border: none;
+  }
+
+  .card table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #94a3b8;
+  }
+}

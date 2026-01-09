@@ -1,0 +1,156 @@
+.product-search {
+  margin-top: 0.5rem;
+}
+
+/* Input */
+.product-search-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.8rem;
+  border-radius: 10px;
+  border: 1px solid #444;
+  background: #1f1f1f;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.product-search-input::placeholder {
+  color: #aaa;
+}
+
+/* Lista */
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Texto */
+.product-name {
+  font-size: 0.85rem;
+  color: #e0e0e0;
+}
+
+.product-price {
+  color: #81c784;
+  font-weight: 600;
+}
+
+/* Botón Agregar */
+.product-add-btn {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.product-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 160, 71, 0.35);
+}
+
+.product-add-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* =========================
+   Cantidad de productos
+========================= */
+
+.product-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Botones + y − */
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #2e7d32, #43a047);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+/* Hover */
+.qty-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(67, 160, 71, 0.4);
+}
+
+/* Active */
+.qty-btn:active {
+  transform: scale(0.95);
+}
+
+/* Valor xN */
+.qty-value {
+  min-width: 32px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.remove-all-btn {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #c0392b;
+}
+
+.remove-all-btn:hover {
+  transform: scale(1.1);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pagination button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background-color: #2e7d32;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}

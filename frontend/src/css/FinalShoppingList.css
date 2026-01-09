@@ -1,0 +1,27 @@
+.final-list {
+  margin-top: 1.5rem;
+}
+
+.final-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.final-table th,
+.final-table td {
+  padding: 0.6rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.final-table th {
+  font-weight: 600;
+  color: #374151;
+}
+
+.final-total {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  text-align: right;
+}
