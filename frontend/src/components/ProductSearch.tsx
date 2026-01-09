@@ -2,9 +2,19 @@ import { useState } from 'react'
 import type { Product } from '../types/Product'
 import '../css/ProductSearch.css'
 
+/* =========================
+   TIPOS
+========================= */
+type SelectedProduct = {
+  id: number
+  name: string
+  unitPrice: number
+  quantity: number
+}
+
 interface Props {
   products: Product[]
-  selected: (Product & { quantity: number })[]
+  selected: SelectedProduct[]
   onAdd: (product: Product) => void
   onRemove: (id: number) => void
   onRemoveAll: (id: number) => void
@@ -22,12 +32,16 @@ const ProductSearch: React.FC<Props> = ({
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  // Filtrado
+  /* =========================
+     FILTRADO
+  ========================= */
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  // Paginación
+  /* =========================
+     PAGINACIÓN
+  ========================= */
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const start = (page - 1) * ITEMS_PER_PAGE
   const paginated = filtered.slice(start, start + ITEMS_PER_PAGE)
@@ -35,7 +49,6 @@ const ProductSearch: React.FC<Props> = ({
   const getSelected = (id: number) =>
     selected.find(p => p.id === id)
 
-  // Reset página al buscar
   const handleSearch = (value: string) => {
     setQuery(value)
     setPage(1)
@@ -91,7 +104,6 @@ const ProductSearch: React.FC<Props> = ({
                     +
                   </button>
 
-                  {/* 🗑️ ELIMINAR TODO */}
                   <button
                     className="remove-all-btn"
                     onClick={() => onRemoveAll(p.id)}
@@ -106,7 +118,6 @@ const ProductSearch: React.FC<Props> = ({
         })}
       </ul>
 
-      {/* 🔢 CONTROLES DE PÁGINA */}
       {totalPages > 1 && (
         <div className="pagination">
           <button

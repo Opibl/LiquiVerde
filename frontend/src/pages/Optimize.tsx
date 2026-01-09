@@ -10,7 +10,10 @@ import FinalShoppingList from '../components/FinalShoppingList'
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
 
-type SelectedProduct = Product & {
+type SelectedProduct = {
+  id: number
+  name: string
+  unitPrice: number
   quantity: number
 }
 
@@ -27,7 +30,11 @@ type OptimizedProduct = {
 type Substitution = {
   fromId: number
   fromName: string
-  toProduct: Product
+  toProduct: {
+    id: number
+    name: string
+    unitPrice: number
+  }
   reason: string
 }
 
@@ -73,9 +80,18 @@ const Optimize: React.FC = () => {
         )
       )
     } else {
-      setSelected([...selected, { ...product, quantity: 1 }])
+      setSelected([
+        ...selected,
+        {
+          id: product.id,
+          name: product.name,
+          unitPrice: product.unitPrice, // ✅ CLAVE
+          quantity: 1,
+        },
+      ])
     }
   }
+
 
   const removeProduct = (id: number) => {
     setSelected(
@@ -153,12 +169,13 @@ const Optimize: React.FC = () => {
      ACEPTAR SUSTITUCIÓN (OPCIÓN B)
   ========================= */
   const acceptSubstitution = (s: Substitution) => {
-    const updatedSelected = selected.map(p =>
+    const updatedSelected: SelectedProduct[] = selected.map(p =>
       p.id === s.fromId
         ? {
-            ...s.toProduct,
+            id: s.toProduct.id,
+            name: s.toProduct.name,
+            unitPrice: s.toProduct.unitPrice,
             quantity: p.quantity,
-            unitPrice: s.toProduct.unitPrice, // 👈 CLAVE
           }
         : p
     )
@@ -176,6 +193,7 @@ const Optimize: React.FC = () => {
     setSelected(updatedSelected)
     optimize(updatedSelected)
   }
+
 
 
   /* =========================
