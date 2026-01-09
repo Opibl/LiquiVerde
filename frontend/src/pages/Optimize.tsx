@@ -155,7 +155,11 @@ const Optimize: React.FC = () => {
   const acceptSubstitution = (s: Substitution) => {
     const updatedSelected = selected.map(p =>
       p.id === s.fromId
-        ? { ...s.toProduct, quantity: p.quantity }
+        ? {
+            ...s.toProduct,
+            quantity: p.quantity,
+            unitPrice: s.toProduct.unitPrice, // 👈 CLAVE
+          }
         : p
     )
 
@@ -165,15 +169,14 @@ const Optimize: React.FC = () => {
     )
 
     if (budget !== null && newTotal > budget) {
-      alert(
-        'Esta sustitución supera el presupuesto disponible.'
-      )
+      alert('Esta sustitución supera el presupuesto disponible.')
       return
     }
 
     setSelected(updatedSelected)
     optimize(updatedSelected)
   }
+
 
   /* =========================
      Presupuesto
