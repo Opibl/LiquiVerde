@@ -155,7 +155,26 @@ const Optimize: React.FC = () => {
 
       setResult(normalized)
       setOriginalTotal(data.originalTotal)
-      setSubstitutions(data.substitutions || [])
+      const normalizedSubstitutions: Substitution[] =
+          (data.substitutions || []).map((s: any) => ({
+            fromId: s.fromId,
+            fromName: s.fromName,
+            reason: s.reason,
+            toProduct: {
+              id: s.toProduct.id,
+              name: s.toProduct.name,
+              quantity: s.quantity ?? 1, // o la que corresponda
+              unitPrice: s.toProduct.price,
+              totalPrice:
+                s.toProduct.price *
+                (s.quantity ?? 1),
+              ecoScore: s.toProduct.eco_score,
+              socialScore: s.toProduct.social_score,
+            },
+          }))
+
+        setSubstitutions(normalizedSubstitutions)
+
     } catch (err) {
       console.error(err)
       alert('Error al optimizar la compra')
