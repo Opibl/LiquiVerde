@@ -47,7 +47,7 @@ Requisitos:
 
 1) Clonar repositorio
 
-git clone https://github.com/tu-usuario/tu-repo.git
+git clone https://github.com/Opibl/LiquiVerde.git
 cd tu-repo
 
 
@@ -78,6 +78,8 @@ CREATE TABLE products (
 Poblar base de datos desde Open Food Facts:
 
 POST http://localhost:3001/api/seed-openfood
+
+Ejemplo: Invoke-RestMethod -Method POST -Uri http://localhost:3001/api/seed-openfood
 
 
 Iniciar backend:
