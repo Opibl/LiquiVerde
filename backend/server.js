@@ -309,56 +309,104 @@ app.get('/api/products', async (_, res) => {
   res.json({ products: r.rows })
 })
 
+
+const translateToSpanish = async (text) => {
+  try {
+    const res = await fetch('https://libretranslate.com/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: text,
+        source: 'auto',
+        target: 'es',
+        format: 'text',
+      }),
+    })
+
+    if (!res.ok) return text
+
+    const data = await res.json()
+    return data.translatedText || text
+  } catch (err) {
+    console.error('Error traducción:', err.message)
+    return text
+  }
+}
+
 app.post('/api/seed-openfood', async (_, res) => {
   await pool.query('TRUNCATE TABLE products RESTART IDENTITY CASCADE')
 
-  const response = await fetch(OPEN_FOOD_URL, {
-    headers: { 'User-Agent': 'LiquiVerde/1.0' },
-  })
-
-  const data = await response.json()
+  const MAX_PAGES = 5
   const seen = new Set()
+  let inserted = 0
 
-  const products = data.products
-    .filter(p => p.product_name)
-    .map(p => {
-      const name = p.product_name_es || p.product_name
-      const norm = normalizeName(name)
-      if (!norm || seen.has(norm)) return null
-      seen.add(norm)
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = `${OPEN_FOOD_URL}&page=${page}`
 
-      return {
-        name,
-        normalized_name: norm,
-        barcode: p.code || null,
-        price: estimateChileanPrice(p),
-        eco_score: estimateEcoScore(p),
-        social_score: estimateSocialScore(p),
-        category: getMainCategory(p.categories_tags),
-        image_url:
-          p.image_front_url ||
-          p.image_url ||
-          p.image_small_url ||
-          null,
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'LiquiVerde/1.0',
+        'Accept': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`Error en OFF page ${page}`)
+      break
+    }
+
+    const data = await response.json()
+    if (!data.products || data.products.length === 0) break
+
+    for (const p of data.products) {
+      let name =
+        p.product_name_es ||
+        p.generic_name_es ||
+        p.product_name ||
+        p.generic_name
+
+      if (!name) continue
+
+      // ✅ REGLA CORRECTA:
+      // si OFF no trae español → traducir SIEMPRE
+      if (!p.product_name_es && !p.generic_name_es) {
+        name = await translateToSpanish(name)
       }
 
-    })
-    .filter(Boolean)
-    .slice(0, 2000)
+      const norm = normalizeName(name)
+      if (!norm || seen.has(norm)) continue
+      seen.add(norm)
 
-  for (const p of products) {
-    await pool.query(
-      `INSERT INTO products
-      (name, normalized_name, barcode, price, eco_score, social_score, category, image_url)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      ON CONFLICT (normalized_name) DO NOTHING`,
-      Object.values(p)
-    )
+      await pool.query(
+        `INSERT INTO products
+         (name, normalized_name, barcode, price, eco_score, social_score, category, image_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         ON CONFLICT (normalized_name) DO NOTHING`,
+        [
+          name,
+          norm,
+          p.code || null,
+          estimateChileanPrice(p),
+          estimateEcoScore(p),
+          estimateSocialScore(p),
+          getMainCategory(p.categories_tags),
+          p.image_front_url ||
+            p.image_url ||
+            p.image_small_url ||
+            null,
+        ]
+      )
 
+      inserted++
+
+      // ⏳ delay para no saturar LibreTranslate
+      await new Promise(r => setTimeout(r, 300))
+    }
   }
 
-  res.json({ inserted: products.length })
+  res.json({ inserted })
 })
+
 
 app.post('/api/optimize', async (req, res) => {
   const { budget, items } = req.body
