@@ -310,14 +310,14 @@ app.get('/api/products', async (_, res) => {
 })
 
 
-const translateToSpanish = async (text) => {
+const translateToSpanish = async (text, source = 'auto') => {
   try {
-    const res = await fetch('https://libretranslate.com/translate', {
+    const res = await fetch('http://localhost:5000/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         q: text,
-        source: 'auto',
+        source,
         target: 'es',
         format: 'text',
       }),
@@ -359,18 +359,33 @@ app.post('/api/seed-openfood', async (_, res) => {
     if (!data.products || data.products.length === 0) break
 
     for (const p of data.products) {
-      let name =
-        p.product_name_es ||
-        p.generic_name_es ||
-        p.product_name ||
-        p.generic_name
+      let name = null
 
-      if (!name) continue
-
-      // ✅ REGLA CORRECTA:
-      // si OFF no trae español → traducir SIEMPRE
-      if (!p.product_name_es && !p.generic_name_es) {
-        name = await translateToSpanish(name)
+      // ✅ PRIORIDAD CORRECTA POR IDIOMA
+      if (p.product_name_es || p.generic_name_es) {
+        name = p.product_name_es || p.generic_name_es
+      } else if (p.product_name_fr || p.generic_name_fr) {
+        name = await translateToSpanish(
+          p.product_name_fr || p.generic_name_fr,
+          'fr'
+        )
+      } else if (p.product_name_en || p.generic_name_en) {
+        name = await translateToSpanish(
+          p.product_name_en || p.generic_name_en,
+          'en'
+        )
+      } else if (p.product_name_ar || p.generic_name_ar) {
+        name = await translateToSpanish(
+          p.product_name_ar || p.generic_name_ar,
+          'ar'
+        )
+      } else if (p.product_name || p.generic_name) {
+        name = await translateToSpanish(
+          p.product_name || p.generic_name,
+          'auto'
+        )
+      } else {
+        continue
       }
 
       const norm = normalizeName(name)
@@ -399,8 +414,8 @@ app.post('/api/seed-openfood', async (_, res) => {
 
       inserted++
 
-      // ⏳ delay para no saturar LibreTranslate
-      await new Promise(r => setTimeout(r, 300))
+      // ⏳ delay suave
+      await new Promise(r => setTimeout(r, 150))
     }
   }
 
