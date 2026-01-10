@@ -248,6 +248,7 @@ final fueron realizados y validados por el autor.
 
 
 DEPLOY EN LA NUBE
+---------
 
 La aplicación fue desplegada utilizando servicios cloud independientes para el frontend y el backend, siguiendo buenas prácticas de separación de responsabilidades.
 
