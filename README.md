@@ -189,10 +189,8 @@ LibreTranslate ejecutado localmente con Docker.
 Se cargan explícitamente los idiomas necesarios para evitar errores de
 detección en nombres cortos de productos.
 
-docker run -p 5000:5000 \
-  -e LT_LOAD_ONLY=es,en,fr,ar \
-  -e LT_DISABLE_WEB_UI=true \
-  libretranslate/libretranslate
+docker run -p 5000:5000 -e LT_LOAD_ONLY=es,en,fr,ar -e LT_DISABLE_WEB_UI=true libretranslate/libretranslate
+
 
 
 El backend consume el servicio en:
