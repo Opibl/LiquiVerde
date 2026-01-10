@@ -246,3 +246,43 @@ de apoyo, principalmente para:
 Toda la arquitectura, decisiones de diseño, implementación y código
 final fueron realizados y validados por el autor.
 
+
+DEPLOY EN LA NUBE
+
+La aplicación fue desplegada utilizando servicios cloud independientes para el frontend y el backend, siguiendo buenas prácticas de separación de responsabilidades.
+
+Frontend
+
+El frontend fue desplegado en Netlify, utilizando su integración continua desde GitHub.
+
+URL pública:
+https://liquiverde.netlify.app
+
+Build automático a partir del branch principal
+
+Configurado para aplicaciones React con Vite
+
+Manejo automático de HTTPS y CDN
+
+Backend
+
+El backend fue desplegado en Railway, utilizando Node.js con PostgreSQL administrado.
+
+URL base de la API:
+https://liquiverde-production.up.railway.app
+
+Variables de entorno configuradas desde Railway
+
+Base de datos PostgreSQL provisionada en el mismo entorno
+
+Soporte para escalado y logs en tiempo real
+
+Consideraciones de Arquitectura
+
+El frontend consume el backend mediante API REST pública
+
+No se requieren API keys privadas para Open Food Facts
+
+La arquitectura permite escalar frontend y backend de forma independiente
+
+El entorno local y el entorno productivo comparten la misma estructura de configuración
