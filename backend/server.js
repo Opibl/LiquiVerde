@@ -361,7 +361,7 @@ app.post('/api/seed-openfood', async (_, res) => {
     for (const p of data.products) {
       let name = null
 
-      // ✅ PRIORIDAD CORRECTA POR IDIOMA
+      // PRIORIDAD CORRECTA POR IDIOMA
       if (p.product_name_es || p.generic_name_es) {
         name = p.product_name_es || p.generic_name_es
       } else if (p.product_name_fr || p.generic_name_fr) {
@@ -414,7 +414,7 @@ app.post('/api/seed-openfood', async (_, res) => {
 
       inserted++
 
-      // ⏳ delay suave
+      // delay suave
       await new Promise(r => setTimeout(r, 150))
     }
   }
