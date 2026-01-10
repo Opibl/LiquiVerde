@@ -5,6 +5,7 @@ import ProductSearch from '../components/ProductSearch'
 import Dashboard from '../components/Dashboard'
 import '../css/Optimize.css'
 import FinalShoppingList from '../components/FinalShoppingList'
+import BarcodeCameraScanner from '../components/BarcodeCameraScanner'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -52,6 +53,7 @@ const Optimize: React.FC = () => {
 
   const [barcode, setBarcode] = useState('')
   const [barcodeError, setBarcodeError] = useState<string | null>(null)
+  const [showScanner, setShowScanner] = useState(false)
 
 
   const resetOptimization = () => {
@@ -322,25 +324,39 @@ const Optimize: React.FC = () => {
         <section className="card">
           <h2>2️⃣ Seleccionar productos</h2>
 
-          <div className="barcode-box">
-            <input
-              type="text"
-              placeholder="Escanea o ingresa código de barras"
-              value={barcode}
-              onChange={e => setBarcode(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') searchByBarcode()
-              }}
-            />
+         <div className="barcode-section">
+            <label className="barcode-label">
+              📦 Escanear producto
+            </label>
 
-            <button onClick={searchByBarcode}>
-              Agregar por código
-            </button>
+            <div className="barcode-input-row">
+              <input
+                type="text"
+                placeholder="Código de barras"
+                value={barcode}
+                onChange={e => setBarcode(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') searchByBarcode()
+                }}
+              />
+
+              <button onClick={searchByBarcode}>➕</button>
+
+              <button
+                className="camera-btn"
+                onClick={() => setShowScanner(true)}
+                title="Abrir cámara"
+              >
+                📷
+              </button>
+            </div>
 
             {barcodeError && (
-              <p className="error">{barcodeError}</p>
+              <p className="barcode-error">{barcodeError}</p>
             )}
           </div>
+
+
 
           {!loading && !error && (
             <ProductSearch
@@ -486,6 +502,17 @@ const Optimize: React.FC = () => {
           </table>
         </details>
       )}
+
+      {showScanner && (
+        <BarcodeCameraScanner
+          onDetected={code => {
+            setBarcode(code)
+            searchByBarcode()
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+  
     </main>
   )
 }

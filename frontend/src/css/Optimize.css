@@ -534,3 +534,104 @@ input[type="number"] {
 .sub-info p {
   margin: 0;
 }
+
+
+.barcode-section {
+  margin-bottom: 1.5rem;
+}
+
+.barcode-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #9be28c;
+  margin-bottom: 0.5rem;
+}
+
+.barcode-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.barcode-input-row input {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+.barcode-input-row button {
+  padding: 0 0.9rem;
+  border-radius: 8px;
+  background: #2ecc71;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.barcode-input-row button:hover {
+  background: #27ae60;
+}
+
+.barcode-error {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+.barcode-divider {
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.barcode-divider span {
+  background: #151515;
+  padding: 0 0.5rem;
+}
+
+.scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-box {
+  position: relative;
+  width: 90%;
+  max-width: 400px;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.scanner-box video {
+  width: 100%;
+  height: auto;
+}
+
+.scanner-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.camera-btn {
+  background: #444;
+  border: none;
+  border-radius: 8px;
+  padding: 0 0.7rem;
+  cursor: pointer;
+}
