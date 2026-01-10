@@ -86,6 +86,28 @@ POST http://localhost:3001/api/seed-openfood
 Ejemplo: Invoke-RestMethod -Method POST -Uri http://localhost:3001/api/seed-openfood
 
 
+TRADUCCIÓN AUTOMÁTICA (DOCKER)
+
+Para normalizar nombres de productos en español, el backend utiliza
+LibreTranslate ejecutado localmente con Docker.
+
+Se cargan explícitamente los idiomas necesarios para evitar errores de
+detección en nombres cortos de productos.
+
+docker run -p 5000:5000 -e LT_LOAD_ONLY=es,en,fr,ar -e LT_DISABLE_WEB_UI=true libretranslate/libretranslate
+
+
+
+El backend consume el servicio en:
+
+http://localhost:5000/translate
+
+
+La traducción se aplica solo cuando Open Food Facts no provee el nombre
+en español, forzando el idioma de origen cuando es conocido
+(fr, en, ar) para asegurar consistencia.
+
+
 Iniciar backend:
 
 npm start
@@ -209,28 +231,6 @@ USO DE LA APLICACIÓN
    - Ahorro
    - Puntaje de sostenibilidad
 6. El usuario puede aceptar sustituciones sugeridas
-
-
-TRADUCCIÓN AUTOMÁTICA (DOCKER)
-
-Para normalizar nombres de productos en español, el backend utiliza
-LibreTranslate ejecutado localmente con Docker.
-
-Se cargan explícitamente los idiomas necesarios para evitar errores de
-detección en nombres cortos de productos.
-
-docker run -p 5000:5000 -e LT_LOAD_ONLY=es,en,fr,ar -e LT_DISABLE_WEB_UI=true libretranslate/libretranslate
-
-
-
-El backend consume el servicio en:
-
-http://localhost:5000/translate
-
-
-La traducción se aplica solo cuando Open Food Facts no provee el nombre
-en español, forzando el idioma de origen cuando es conocido
-(fr, en, ar) para asegurar consistencia.
 
 
 USO DE IA
