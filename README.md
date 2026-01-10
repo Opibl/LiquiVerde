@@ -88,7 +88,7 @@ Ejemplo: Invoke-RestMethod -Method POST -Uri http://localhost:3001/api/seed-open
 
 Iniciar backend:
 
-npm run dev
+npm start
 
 
 3) Frontend
