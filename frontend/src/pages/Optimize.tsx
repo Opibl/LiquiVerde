@@ -50,6 +50,14 @@ const Optimize: React.FC = () => {
   const [budgetConfirmed, setBudgetConfirmed] = useState(false)
   const [originalList, setOriginalList] = useState<SelectedProduct[]>([])
 
+  const resetOptimization = () => {
+    setResult([])
+    setSubstitutions([])
+    setOriginalList([])
+    setOriginalTotal(0)
+  }
+
+
   const hasResult = result.length > 0
 
   /* =========================
@@ -219,13 +227,17 @@ const Optimize: React.FC = () => {
   ========================= */
   const confirmBudget = () => {
     const value = Number(budgetDraft)
+
     if (!value || value <= 0) {
       alert('Ingresa un presupuesto válido')
       return
     }
+
     setBudget(Math.round(value))
     setBudgetConfirmed(true)
+    resetOptimization()
   }
+
 
   /* =========================
      UI
@@ -241,15 +253,17 @@ const Optimize: React.FC = () => {
         <section className="card">
           <h2>1️⃣ Presupuesto</h2>
 
-          <input
+         <input
             type="number"
             placeholder="Ej: 3000"
             value={budgetDraft}
             onChange={e => {
               setBudgetDraft(e.target.value)
               setBudgetConfirmed(false)
+              resetOptimization()
             }}
           />
+
 
           <button
             className="confirm-budget-btn"
@@ -328,7 +342,10 @@ const Optimize: React.FC = () => {
         <button
           className="optimize-btn"
           onClick={() => optimize()}
-          disabled={!budget || selected.length === 0}
+          disabled={
+            !budgetConfirmed ||
+            selected.length === 0
+          }
         >
           Optimizar compra sostenible
         </button>

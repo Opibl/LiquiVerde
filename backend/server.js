@@ -67,7 +67,7 @@ const estimateChileanPrice = (product) => {
 }
 
 /* ======================================================
-  ECO SCORE (mejorado)
+  ECO SCORE
 ====================================================== */
 
 const estimateEcoScore = (p) => {
@@ -101,7 +101,7 @@ const estimateEcoScore = (p) => {
 }
 
 /* ======================================================
-  SOCIAL SCORE (mejorado)
+  SOCIAL SCORE
 ====================================================== */
 
 const estimateSocialScore = (p) => {
@@ -123,7 +123,7 @@ const estimateSocialScore = (p) => {
 }
 
 /* ======================================================
-  FUNCIÓN DE UTILIDAD (NÚCLEO MATEMÁTICO)
+  FUNCIÓN DE UTILIDAD (CES)
 ====================================================== */
 
 const sustainabilityUtility = (
@@ -252,77 +252,105 @@ const paretoFront = (solutions) =>
   )
 
 /* ======================================================
+  SUSTITUCIONES (POST-OPTIMIZACIÓN)
+====================================================== */
+
+const detectSubstitutions = (optimizedItems, allProducts) => {
+  const subs = []
+
+  optimizedItems.forEach(item => {
+    const baseScore = sustainabilityUtility(
+      item.eco_score,
+      item.social_score
+    )
+
+    const better = allProducts.find(p =>
+      p.id !== item.id &&
+      p.category === item.category &&
+      p.price <= item.price &&
+      sustainabilityUtility(
+        p.eco_score,
+        p.social_score
+      ) > baseScore
+    )
+
+    if (better) {
+      subs.push({
+        fromId: item.id,
+        fromName: item.name,
+        toProduct: better,
+        reason: 'Mayor sostenibilidad con igual o menor precio',
+      })
+    }
+  })
+
+  return subs
+}
+
+/* ======================================================
   ROUTES
 ====================================================== */
 
 app.get('/api/products', async (_, res) => {
-  try {
-    const r = await pool.query(
-      'SELECT id,name,price,eco_score AS "ecoScore",social_score AS "socialScore",category,image_url FROM products LIMIT 2000'
-    )
-    res.json({ products: r.rows })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
+  const r = await pool.query(
+    'SELECT id,name,price,eco_score AS "ecoScore",social_score AS "socialScore",category,image_url FROM products LIMIT 2000'
+  )
+  res.json({ products: r.rows })
 })
 
 app.post('/api/seed-openfood', async (_, res) => {
-  try {
-    await pool.query('TRUNCATE TABLE products RESTART IDENTITY CASCADE')
+  await pool.query('TRUNCATE TABLE products RESTART IDENTITY CASCADE')
 
-    const response = await fetch(OPEN_FOOD_URL, {
-      headers: { 'User-Agent': 'LiquiVerde/1.0' },
+  const response = await fetch(OPEN_FOOD_URL, {
+    headers: { 'User-Agent': 'LiquiVerde/1.0' },
+  })
+
+  const data = await response.json()
+  const seen = new Set()
+
+  const products = data.products
+    .filter(p => p.product_name)
+    .map(p => {
+      const name = p.product_name_es || p.product_name
+      const norm = normalizeName(name)
+      if (!norm || seen.has(norm)) return null
+      seen.add(norm)
+
+      return {
+        name,
+        normalized_name: norm,
+        price: estimateChileanPrice(p),
+        eco_score: estimateEcoScore(p),
+        social_score: estimateSocialScore(p),
+        category: getMainCategory(p.categories_tags),
+        image_url:
+          p.image_front_url ||
+          p.image_url ||
+          p.image_small_url ||
+          null,
+      }
     })
+    .filter(Boolean)
+    .slice(0, 2000)
 
-    const data = await response.json()
-    const seen = new Set()
-
-    const products = data.products
-      .filter(p => p.product_name)
-      .map(p => {
-        const name = p.product_name_es || p.product_name
-        const norm = normalizeName(name)
-        if (!norm || seen.has(norm)) return null
-        seen.add(norm)
-
-        return {
-          name,
-          normalized_name: norm,
-          price: estimateChileanPrice(p),
-          eco_score: estimateEcoScore(p),
-          social_score: estimateSocialScore(p),
-          category: getMainCategory(p.categories_tags),
-          image_url:
-            p.image_front_url ||
-            p.image_url ||
-            p.image_small_url ||
-            null,
-        }
-      })
-      .filter(Boolean)
-      .slice(0, 2000)
-
-    for (const p of products) {
-      await pool.query(
-        `INSERT INTO products 
-         (name, normalized_name, price, eco_score, social_score, category, image_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
-         ON CONFLICT (normalized_name) DO NOTHING`,
-        Object.values(p)
-      )
-    }
-
-    res.json({ inserted: products.length })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
+  for (const p of products) {
+    await pool.query(
+      `INSERT INTO products
+       (name, normalized_name, price, eco_score, social_score, category, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       ON CONFLICT (normalized_name) DO NOTHING`,
+      Object.values(p)
+    )
   }
+
+  res.json({ inserted: products.length })
 })
 
 app.post('/api/optimize', async (req, res) => {
   const { budget, items } = req.body
 
   const db = await pool.query(
-    `SELECT * FROM products WHERE id = ANY($1)`,
+    'SELECT * FROM products WHERE id = ANY($1)',
     [items.map(i => i.id)]
   )
 
@@ -347,9 +375,19 @@ app.post('/api/optimize', async (req, res) => {
     (a, b) => b.sustainability - a.sustainability
   )[0]
 
+  const allProducts = (await pool.query(
+    'SELECT * FROM products'
+  )).rows
+
+  const substitutions = detectSubstitutions(
+    chosen.items,
+    allProducts
+  )
+
   res.json({
     originalTotal,
     optimized: chosen.items,
+    substitutions,
   })
 })
 
