@@ -293,8 +293,19 @@ const detectSubstitutions = (optimizedItems, allProducts) => {
 
 app.get('/api/products', async (_, res) => {
   const r = await pool.query(
-    'SELECT id,name,price,eco_score AS "ecoScore",social_score AS "socialScore",category,image_url FROM products LIMIT 2000'
+    `SELECT
+       id,
+       name,
+       barcode,                         
+       price,
+       eco_score   AS "ecoScore",
+       social_score AS "socialScore",
+       category,
+       image_url
+     FROM products
+     LIMIT 2000`
   )
+
   res.json({ products: r.rows })
 })
 
@@ -319,6 +330,7 @@ app.post('/api/seed-openfood', async (_, res) => {
       return {
         name,
         normalized_name: norm,
+        barcode: p.code || null,
         price: estimateChileanPrice(p),
         eco_score: estimateEcoScore(p),
         social_score: estimateSocialScore(p),
@@ -329,6 +341,7 @@ app.post('/api/seed-openfood', async (_, res) => {
           p.image_small_url ||
           null,
       }
+
     })
     .filter(Boolean)
     .slice(0, 2000)
@@ -336,11 +349,12 @@ app.post('/api/seed-openfood', async (_, res) => {
   for (const p of products) {
     await pool.query(
       `INSERT INTO products
-       (name, normalized_name, price, eco_score, social_score, category, image_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
-       ON CONFLICT (normalized_name) DO NOTHING`,
+      (name, normalized_name, barcode, price, eco_score, social_score, category, image_url)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (normalized_name) DO NOTHING`,
       Object.values(p)
     )
+
   }
 
   res.json({ inserted: products.length })
@@ -390,6 +404,24 @@ app.post('/api/optimize', async (req, res) => {
     substitutions,
   })
 })
+
+app.get('/api/products/barcode/:code', async (req, res) => {
+  const { code } = req.params
+
+  const r = await pool.query(
+    'SELECT * FROM products WHERE barcode = $1 LIMIT 1',
+    [code]
+  )
+
+  if (r.rows.length === 0) {
+    return res.status(404).json({
+      error: 'Producto no encontrado',
+    })
+  }
+
+  res.json(r.rows[0])
+})
+
 
 app.listen(PORT, () =>
   console.log(`Backend listo en http://localhost:${PORT}`)

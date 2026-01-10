@@ -50,6 +50,10 @@ const Optimize: React.FC = () => {
   const [budgetConfirmed, setBudgetConfirmed] = useState(false)
   const [originalList, setOriginalList] = useState<SelectedProduct[]>([])
 
+  const [barcode, setBarcode] = useState('')
+  const [barcodeError, setBarcodeError] = useState<string | null>(null)
+
+
   const resetOptimization = () => {
     setResult([])
     setSubstitutions([])
@@ -109,6 +113,41 @@ const Optimize: React.FC = () => {
 
   const removeAllProduct = (id: number) => {
     setSelected(selected.filter(p => p.id !== id))
+  }
+
+
+  const searchByBarcode = async () => {
+    if (!barcode) return
+
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/products/barcode/${barcode}`
+      )
+
+      if (!res.ok) {
+        setBarcodeError('Producto no encontrado')
+        return
+      }
+
+      const p = await res.json()
+
+      const product: Product = {
+        id: p.id,
+        name: p.name,
+        unitPrice: p.price,
+        ecoScore: p.eco_score,
+        socialScore: p.social_score,
+        category: p.category,
+        barcode: p.barcode,
+        imageUrl: p.image_url,
+      }
+
+      addProduct(product)
+      setBarcode('')
+      setBarcodeError(null)
+    } catch {
+      setBarcodeError('Error buscando producto')
+    }
   }
 
   /* =========================
@@ -282,6 +321,26 @@ const Optimize: React.FC = () => {
 
         <section className="card">
           <h2>2️⃣ Seleccionar productos</h2>
+
+          <div className="barcode-box">
+            <input
+              type="text"
+              placeholder="Escanea o ingresa código de barras"
+              value={barcode}
+              onChange={e => setBarcode(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') searchByBarcode()
+              }}
+            />
+
+            <button onClick={searchByBarcode}>
+              Agregar por código
+            </button>
+
+            {barcodeError && (
+              <p className="error">{barcodeError}</p>
+            )}
+          </div>
 
           {!loading && !error && (
             <ProductSearch

@@ -29,9 +29,14 @@ const ProductSearch: React.FC<Props> = ({
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(query.toLowerCase())
-  )
+  const filtered = products.filter(p => {
+    const q = query.toLowerCase()
+
+    return (
+      p.name.toLowerCase().includes(q) ||
+      (p.barcode && p.barcode.includes(q))
+    )
+  })
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const start = (page - 1) * ITEMS_PER_PAGE
