@@ -4,7 +4,10 @@ import 'dotenv/config'
 import pool from './db.js'
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
+const TRANSLATE_URL =
+  process.env.TRANSLATE_URL || 'http://localhost:5000'
+
 
 app.use(cors())
 app.use(express.json())
@@ -312,7 +315,7 @@ app.get('/api/products', async (_, res) => {
 
 const translateToSpanish = async (text, source = 'auto') => {
   try {
-    const res = await fetch('http://localhost:5000/translate', {
+    const res = await fetch(`${TRANSLATE_URL}/translate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

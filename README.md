@@ -181,6 +181,29 @@ USO DE LA APLICACIÓN
 6. El usuario puede aceptar sustituciones sugeridas
 
 
+TRADUCCIÓN AUTOMÁTICA (DOCKER)
+
+Para normalizar nombres de productos en español, el backend utiliza
+LibreTranslate ejecutado localmente con Docker.
+
+Se cargan explícitamente los idiomas necesarios para evitar errores de
+detección en nombres cortos de productos.
+
+docker run -p 5000:5000 \
+  -e LT_LOAD_ONLY=es,en,fr,ar \
+  -e LT_DISABLE_WEB_UI=true \
+  libretranslate/libretranslate
+
+
+El backend consume el servicio en:
+
+http://localhost:5000/translate
+
+
+La traducción se aplica solo cuando Open Food Facts no provee el nombre
+en español, forzando el idioma de origen cuando es conocido
+(fr, en, ar) para asegurar consistencia.
+
 
 USO DE IA
 ---------
@@ -194,5 +217,4 @@ de apoyo, principalmente para:
 
 Toda la arquitectura, decisiones de diseño, implementación y código
 final fueron realizados y validados por el autor.
-
 
