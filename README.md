@@ -67,12 +67,16 @@ Crear tabla de productos:
 CREATE TABLE products (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  normalized_name TEXT UNIQUE,
-  price INTEGER,
-  eco_score INTEGER,
-  social_score INTEGER,
-  category TEXT
+  normalized_name TEXT UNIQUE NOT NULL,
+  barcode VARCHAR(32),              
+  price INTEGER NOT NULL CHECK (price >= 0),
+  eco_score INTEGER CHECK (eco_score BETWEEN 0 AND 100),
+  social_score INTEGER CHECK (social_score BETWEEN 0 AND 100),
+  category TEXT,
+  image_url TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
 );
+
 
 
 Poblar base de datos desde Open Food Facts:
