@@ -119,14 +119,44 @@ ALGORITMOS IMPLEMENTADOS
 Se implementó una variante del problema de la mochila 0/1 donde:
 
 - El presupuesto es una restricción dura
-- El objetivo es maximizar la sostenibilidad total
+- El objetivo principal es maximizar la sostenibilidad total de la compra
 
 La función objetivo combina:
 - EcoScore (impacto ambiental)
 - SocialScore (impacto social)
-- Precio (impacto económico)
 
-El algoritmo nunca permite superar el presupuesto definido.
+El precio no forma parte de la función objetivo directa, sino que se utiliza
+como una restricción estricta del sistema y como criterio secundario de
+comparación entre soluciones eficientes.
+
+El algoritmo nunca permite superar el presupuesto definido por el usuario.
+
+### Criterios de Optimización y Prioridades
+
+El sistema implementa una optimización multi-objetivo bajo una restricción
+estricta de presupuesto.
+
+Las prioridades del algoritmo son:
+
+1. Nunca exceder el presupuesto definido por el usuario.
+2. Maximizar la sostenibilidad total de la compra (impacto ambiental y social).
+3. Utilizar el precio únicamente como restricción y criterio secundario
+   de comparación entre soluciones eficientes.
+
+Las cantidades de productos son definidas explícitamente por el usuario
+y se consideran fijas durante la optimización. Cada producto se modela
+como un ítem compuesto (precio × cantidad).
+
+Para la optimización se generan múltiples soluciones candidatas con
+objetivos distintos (maximización de sostenibilidad y minimización de precio).
+Estas soluciones se evalúan utilizando criterios de Pareto, y la solución
+final seleccionada es aquella que maximiza la sostenibilidad dentro del
+conjunto de soluciones no dominadas.
+
+Este enfoque permite manejar trade-offs reales entre costo y sostenibilidad
+de forma transparente y controlada.
+
+
 
 
 2) Sistema de Scoring de Sostenibilidad
