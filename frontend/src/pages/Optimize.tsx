@@ -196,22 +196,21 @@ const Optimize: React.FC = () => {
       return
     }
 
+    // 🔄 actualizar selected ANTES de optimizar
+    const updatedSelected: SelectedProduct[] = updatedResult.map(p => ({
+      id: p.id,
+      name: p.name,
+      unitPrice: p.unitPrice,
+      quantity: p.quantity,
+    }))
+
+    setSelected(updatedSelected)
     setResult(updatedResult)
 
-    setSelected(
-      updatedResult.map(p => ({
-        id: p.id,
-        name: p.name,
-        unitPrice: p.unitPrice,
-        quantity: p.quantity,
-      }))
-    )
-
-    // ✅ ELIMINAR la sustitución aceptada
-    setSubstitutions(prev =>
-      prev.filter(sub => sub.fromId !== s.fromId)
-    )
+    //RE-OPTIMIZAR automáticamente
+    optimize(updatedSelected)
   }
+
 
 
 
@@ -281,7 +280,7 @@ const Optimize: React.FC = () => {
           )}
         </section>
 
-        {!hasResult && originalList.length > 0 && (
+        {originalList.length > 0 && (
           <section className="card">
             <h2>Lista original</h2>
 

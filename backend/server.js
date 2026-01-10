@@ -21,7 +21,7 @@ const OPEN_FOOD_URL =
   '&page_size=2000'
 
 /* ======================================================
-  Utils
+  Utils generales
 ====================================================== */
 
 const normalizeName = (name = '') =>
@@ -34,6 +34,16 @@ const normalizeName = (name = '') =>
 
 const randomBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min
+
+const clamp = (x, min = 0, max = 100) =>
+  Math.max(min, Math.min(max, x))
+
+const normalize01 = (x, min = 0, max = 100) =>
+  (clamp(x, min, max) - min) / (max - min)
+
+/* ======================================================
+  Precio estimado Chile
+====================================================== */
 
 const estimateChileanPrice = (product) => {
   const c = product.categories_tags || []
@@ -56,50 +66,85 @@ const estimateChileanPrice = (product) => {
   return randomBetween(800, 1500)
 }
 
+/* ======================================================
+  ECO SCORE (mejorado)
+====================================================== */
+
 const estimateEcoScore = (p) => {
-  const c = p.categories_tags || []
   let score = 50
+  const c = p.categories_tags || []
+  const labels = p.labels_tags || []
+  const nova = p.nova_groups_tags || []
+  const packaging = p.packaging_tags || []
 
-  if (c.some(x => x.includes('legumes'))) score += 30
-  if (c.some(x => x.includes('fruits'))) score += 25
-  if (c.some(x => x.includes('vegetables'))) score += 25
-  if (c.some(x => x.includes('water'))) score += 20
-  if (c.some(x => x.includes('whole'))) score += 15
+  if (c.some(x => x.includes('legumes'))) score += 15
+  if (c.some(x => x.includes('vegetables'))) score += 15
+  if (c.some(x => x.includes('fruits'))) score += 15
+  if (c.some(x => x.includes('meat'))) score -= 20
+  if (c.some(x => x.includes('dairy'))) score -= 10
 
-  if (c.some(x => x.includes('chocolate'))) score -= 20
-  if (c.some(x => x.includes('snacks'))) score -= 20
-  if (c.some(x => x.includes('ultra'))) score -= 25
+  if (nova.includes('en:nova-group-4')) score -= 20
+  if (nova.includes('en:nova-group-1')) score += 10
+
+  if (packaging.some(x => x.includes('plastic'))) score -= 10
+  if (packaging.some(x => x.includes('glass'))) score += 5
+  if (packaging.some(x => x.includes('paper'))) score += 5
+
+  if (labels.includes('en:organic')) score += 10
 
   if (p.ecoscore_grade === 'a') score += 10
   if (p.ecoscore_grade === 'b') score += 5
   if (p.ecoscore_grade === 'd') score -= 10
   if (p.ecoscore_grade === 'e') score -= 20
 
-  return Math.max(20, Math.min(score, 95))
+  return clamp(score)
 }
+
+/* ======================================================
+  SOCIAL SCORE (mejorado)
+====================================================== */
 
 const estimateSocialScore = (p) => {
   let score = 50
-
-  const countries = p.countries_tags || []
   const labels = p.labels_tags || []
+  const countries = p.countries_tags || []
   const nova = p.nova_groups_tags || []
-  const lang = p.lang || ''
 
-  if (countries.includes('en:chile')) score += 20
-  else if (countries.length > 0) score += 10
+  if (countries.includes('en:chile')) score += 15
+  else if (countries.length > 0) score += 5
 
-  if (labels.some(l => l.includes('fair-trade'))) score += 20
-  if (labels.some(l => l.includes('organic'))) score += 10
-  if (labels.some(l => l.includes('local'))) score += 10
+  if (labels.includes('en:fair-trade')) score += 20
+  if (labels.includes('en:small-producers')) score += 10
 
-  if (nova.includes('en:nova-group-4')) score -= 20
+  if (nova.includes('en:nova-group-4')) score -= 25
   if (nova.includes('en:nova-group-1')) score += 10
 
-  if (lang === 'es') score += 5
-
-  return Math.max(30, Math.min(score, 95))
+  return clamp(score)
 }
+
+/* ======================================================
+  FUNCIÓN DE UTILIDAD (NÚCLEO MATEMÁTICO)
+====================================================== */
+
+const sustainabilityUtility = (
+  eco,
+  social,
+  weights = { eco: 0.6, social: 0.4 },
+  rho = 0.5
+) => {
+  const e = normalize01(eco)
+  const s = normalize01(social)
+
+  return Math.pow(
+    weights.eco * Math.pow(e, rho) +
+    weights.social * Math.pow(s, rho),
+    1 / rho
+  )
+}
+
+/* ======================================================
+  CATEGORÍA PRINCIPAL
+====================================================== */
 
 const getMainCategory = (categories = []) => {
   const c = categories.join(' ').toLowerCase()
@@ -120,16 +165,24 @@ const getMainCategory = (categories = []) => {
 }
 
 /* ======================================================
-  MULTI-OBJETIVO + PARETO
+  OPTIMIZACIÓN MULTIOBJETIVO
 ====================================================== */
 
 const optimizeByObjective = (items, budget, objective) => {
   const scored = items.map(p => {
     let value = 0
 
-    if (objective === 'eco') value = p.eco_score * p.quantity
-    if (objective === 'social') value = p.social_score * p.quantity
-    if (objective === 'price') value = -p.price * p.quantity
+    if (objective === 'sustainability') {
+      value =
+        sustainabilityUtility(
+          p.eco_score,
+          p.social_score
+        ) * p.quantity
+    }
+
+    if (objective === 'price') {
+      value = -p.price * p.quantity
+    }
 
     return {
       ...p,
@@ -174,48 +227,29 @@ const optimizeByObjective = (items, budget, objective) => {
 const evaluateSolution = (items) => ({
   items,
   totalPrice: items.reduce((s, p) => s + p.price * p.quantity, 0),
-  ecoTotal: items.reduce((s, p) => s + p.eco_score * p.quantity, 0),
-  socialTotal: items.reduce((s, p) => s + p.social_score * p.quantity, 0),
+  sustainability: items.reduce(
+    (s, p) =>
+      s +
+      sustainabilityUtility(
+        p.eco_score,
+        p.social_score
+      ) * p.quantity,
+    0
+  ),
 })
 
 const dominates = (a, b) =>
   a.totalPrice <= b.totalPrice &&
-  a.ecoTotal >= b.ecoTotal &&
-  a.socialTotal >= b.socialTotal &&
+  a.sustainability >= b.sustainability &&
   (
     a.totalPrice < b.totalPrice ||
-    a.ecoTotal > b.ecoTotal ||
-    a.socialTotal > b.socialTotal
+    a.sustainability > b.sustainability
   )
 
 const paretoFront = (solutions) =>
   solutions.filter(s1 =>
     !solutions.some(s2 => dominates(s2, s1))
   )
-
-const detectSubstitutions = (optimized, allProducts) => {
-  const subs = []
-
-  optimized.forEach(item => {
-    const alt = allProducts.find(p =>
-      p.category === item.category &&
-      p.eco_score > item.eco_score &&
-      p.price <= item.price &&
-      !optimized.some(o => o.id === p.id)
-    )
-
-    if (alt) {
-      subs.push({
-        fromId: item.id,
-        fromName: item.name,
-        toProduct: alt,
-        reason: 'Mejor ecoScore y menor precio',
-      })
-    }
-  })
-
-  return subs
-}
 
 /* ======================================================
   ROUTES
@@ -228,11 +262,9 @@ app.get('/api/products', async (_, res) => {
     )
     res.json({ products: r.rows })
   } catch (err) {
-    console.error('API /products error:', err)
     res.status(500).json({ error: err.message })
   }
 })
-
 
 app.post('/api/seed-openfood', async (_, res) => {
   try {
@@ -282,7 +314,6 @@ app.post('/api/seed-openfood', async (_, res) => {
 
     res.json({ inserted: products.length })
   } catch (err) {
-    console.error('API /seed-openfood error:', err)
     res.status(500).json({ error: err.message })
   }
 })
@@ -306,25 +337,19 @@ app.post('/api/optimize', async (req, res) => {
   )
 
   const solutions = [
-    optimizeByObjective(enriched, budget, 'eco'),
-    optimizeByObjective(enriched, budget, 'social'),
+    optimizeByObjective(enriched, budget, 'sustainability'),
     optimizeByObjective(enriched, budget, 'price'),
   ].map(evaluateSolution)
 
   const pareto = paretoFront(solutions)
 
   const chosen = pareto.sort(
-    (a, b) => (b.ecoTotal + b.socialTotal) -
-              (a.ecoTotal + a.socialTotal)
+    (a, b) => b.sustainability - a.sustainability
   )[0]
-
-  const allProducts = (await pool.query('SELECT * FROM products')).rows
-  const substitutions = detectSubstitutions(chosen.items, allProducts)
 
   res.json({
     originalTotal,
     optimized: chosen.items,
-    substitutions,
   })
 })
 
