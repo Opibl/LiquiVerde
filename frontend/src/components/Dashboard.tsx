@@ -143,37 +143,6 @@ const Dashboard: React.FC<Props> = ({
         </div>
       </section>
 
-      {/* ===== GRÁFICO BARRAS ===== */}
-      <section className="chart">
-        <h3>Comparación de gasto</h3>
-        <Bar data={spendingData} />
-      </section>
-
-      {/* Impacto ambiental */}
-      <section className="impact">
-        <h3>Impacto ambiental de la compra</h3>
-
-        {/* Barra de impacto */}
-        <div className="impact-bar">
-          <div
-            className="impact-bar-fill"
-            style={{ width: `${ecoAvg}%` }}
-          />
-        </div>
-
-        <p>
-          Nivel de sostenibilidad:{' '}
-          <strong>
-            {ecoAvg >= 70
-              ? 'Alto 🌿'
-              : ecoAvg >= 40
-              ? 'Medio ⚖️'
-              : 'Bajo ⚠️'}
-          </strong>
-        </p>
-      </section>
-
-
       {/* Tabla final */}
       <section className="table">
         <h3>Lista final optimizada</h3>
@@ -203,6 +172,36 @@ const Dashboard: React.FC<Props> = ({
             ))}
           </tbody>
         </table>
+      </section>
+
+      {/* ===== GRÁFICO BARRAS ===== */}
+      <section className="chart">
+        <h3>Comparación de gasto</h3>
+        <Bar data={spendingData} />
+      </section>
+
+      {/* Impacto ambiental */}
+      <section className="impact">
+        <h3>Impacto ambiental de la compra</h3>
+
+        {/* Barra de impacto */}
+        <div className="impact-bar">
+          <div
+            className="impact-bar-fill"
+            style={{ width: `${ecoAvg}%` }}
+          />
+        </div>
+
+        <p>
+          Nivel de sostenibilidad:{' '}
+          <strong>
+            {ecoAvg >= 70
+              ? 'Alto 🌿'
+              : ecoAvg >= 40
+              ? 'Medio ⚖️'
+              : 'Bajo ⚠️'}
+          </strong>
+        </p>
       </section>
 
       {/* ===== GRÁFICO TORTA ===== */}
