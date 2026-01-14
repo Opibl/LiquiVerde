@@ -5,9 +5,7 @@ import pool from './db.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
-const TRANSLATE_URL =
-  process.env.TRANSLATE_URL || 'http://localhost:5000'
-
+const TRANSLATE_URL = process.env.TRANSLATE_URL || 'http://localhost:5000'
 
 app.use(cors())
 app.use(express.json())
@@ -38,8 +36,7 @@ const normalizeName = (name = '') =>
 const randomBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min
 
-const clamp = (x, min = 0, max = 100) =>
-  Math.max(min, Math.min(max, x))
+const clamp = (x, min = 0, max = 100) => Math.max(min, Math.min(max, x))
 
 const normalize01 = (x, min = 0, max = 100) =>
   (clamp(x, min, max) - min) / (max - min)
@@ -51,19 +48,16 @@ const normalize01 = (x, min = 0, max = 100) =>
 const estimateChileanPrice = (product) => {
   const c = product.categories_tags || []
 
-  if (c.some(x => x.includes('milk') || x.includes('dairy')))
+  if (c.some((x) => x.includes('milk') || x.includes('dairy')))
     return randomBetween(700, 1200)
-  if (c.some(x => x.includes('bread')))
-    return randomBetween(800, 1200)
-  if (c.some(x => x.includes('water') || x.includes('beverage')))
+  if (c.some((x) => x.includes('bread'))) return randomBetween(800, 1200)
+  if (c.some((x) => x.includes('water') || x.includes('beverage')))
     return randomBetween(500, 1000)
-  if (c.some(x => x.includes('rice') || x.includes('cereal')))
+  if (c.some((x) => x.includes('rice') || x.includes('cereal')))
     return randomBetween(900, 1500)
-  if (c.some(x => x.includes('legume')))
-    return randomBetween(800, 1200)
-  if (c.some(x => x.includes('oil')))
-    return randomBetween(1800, 3000)
-  if (c.some(x => x.includes('chocolate') || x.includes('snack')))
+  if (c.some((x) => x.includes('legume'))) return randomBetween(800, 1200)
+  if (c.some((x) => x.includes('oil'))) return randomBetween(1800, 3000)
+  if (c.some((x) => x.includes('chocolate') || x.includes('snack')))
     return randomBetween(900, 2500)
 
   return randomBetween(800, 1500)
@@ -80,18 +74,18 @@ const estimateEcoScore = (p) => {
   const nova = p.nova_groups_tags || []
   const packaging = p.packaging_tags || []
 
-  if (c.some(x => x.includes('legumes'))) score += 15
-  if (c.some(x => x.includes('vegetables'))) score += 15
-  if (c.some(x => x.includes('fruits'))) score += 15
-  if (c.some(x => x.includes('meat'))) score -= 20
-  if (c.some(x => x.includes('dairy'))) score -= 10
+  if (c.some((x) => x.includes('legumes'))) score += 15
+  if (c.some((x) => x.includes('vegetables'))) score += 15
+  if (c.some((x) => x.includes('fruits'))) score += 15
+  if (c.some((x) => x.includes('meat'))) score -= 20
+  if (c.some((x) => x.includes('dairy'))) score -= 10
 
   if (nova.includes('en:nova-group-4')) score -= 20
   if (nova.includes('en:nova-group-1')) score += 10
 
-  if (packaging.some(x => x.includes('plastic'))) score -= 10
-  if (packaging.some(x => x.includes('glass'))) score += 5
-  if (packaging.some(x => x.includes('paper'))) score += 5
+  if (packaging.some((x) => x.includes('plastic'))) score -= 10
+  if (packaging.some((x) => x.includes('glass'))) score += 5
+  if (packaging.some((x) => x.includes('paper'))) score += 5
 
   if (labels.includes('en:organic')) score += 10
 
@@ -139,8 +133,7 @@ const sustainabilityUtility = (
   const s = normalize01(social)
 
   return Math.pow(
-    weights.eco * Math.pow(e, rho) +
-    weights.social * Math.pow(s, rho),
+    weights.eco * Math.pow(e, rho) + weights.social * Math.pow(s, rho),
     1 / rho
   )
 }
@@ -168,75 +161,15 @@ const getMainCategory = (categories = []) => {
 }
 
 /* ======================================================
-  OPTIMIZACIÓN MULTIOBJETIVO
+  OPTIMIZACIÓN MULTIOBJETIVO REAL (PARETO DP)
 ====================================================== */
 
-const optimizeByObjective = (items, budget, objective) => {
-  const scored = items.map(p => {
-    let value = 0
-
-    if (objective === 'sustainability') {
-      value =
-        sustainabilityUtility(
-          p.eco_score,
-          p.social_score
-        ) * p.quantity
-    }
-
-    if (objective === 'price') {
-      value = -p.price * p.quantity
-    }
-
-    return {
-      ...p,
-      value,
-      totalPrice: p.price * p.quantity,
-    }
-  })
-
-  const n = scored.length
-  const B = budget
-  const dp = Array.from({ length: n + 1 }, () =>
-    Array(B + 1).fill(0)
-  )
-
-  for (let i = 1; i <= n; i++) {
-    for (let b = 0; b <= B; b++) {
-      if (scored[i - 1].totalPrice <= b) {
-        dp[i][b] = Math.max(
-          dp[i - 1][b],
-          dp[i - 1][b - scored[i - 1].totalPrice] +
-            scored[i - 1].value
-        )
-      } else {
-        dp[i][b] = dp[i - 1][b]
-      }
-    }
-  }
-
-  const chosen = []
-  let b = B
-
-  for (let i = n; i > 0; i--) {
-    if (dp[i][b] !== dp[i - 1][b]) {
-      chosen.push(scored[i - 1])
-      b -= scored[i - 1].totalPrice
-    }
-  }
-
-  return chosen.reverse()
-}
-
-const evaluateSolution = (items) => ({
+const evaluateItems = (items) => ({
   items,
   totalPrice: items.reduce((s, p) => s + p.price * p.quantity, 0),
   sustainability: items.reduce(
     (s, p) =>
-      s +
-      sustainabilityUtility(
-        p.eco_score,
-        p.social_score
-      ) * p.quantity,
+      s + sustainabilityUtility(p.eco_score, p.social_score) * p.quantity,
     0
   ),
 })
@@ -244,15 +177,53 @@ const evaluateSolution = (items) => ({
 const dominates = (a, b) =>
   a.totalPrice <= b.totalPrice &&
   a.sustainability >= b.sustainability &&
-  (
-    a.totalPrice < b.totalPrice ||
-    a.sustainability > b.sustainability
-  )
+  (a.totalPrice < b.totalPrice || a.sustainability > b.sustainability)
 
 const paretoFront = (solutions) =>
-  solutions.filter(s1 =>
-    !solutions.some(s2 => dominates(s2, s1))
+  solutions.filter((s1) => !solutions.some((s2) => s2 !== s1 && dominates(s2, s1)))
+
+const paretoOptimize = (items, budget) => {
+  let dp = Array.from({ length: budget + 1 }, () => [])
+
+  dp[0] = [evaluateItems([])]
+
+  const prune = (solutions) => paretoFront(solutions)
+
+  for (const p of items) {
+    const itemCost = p.price * p.quantity
+    if (itemCost > budget) continue
+
+    const next = dp.map((list) => list.slice())
+
+    for (let b = 0; b <= budget; b++) {
+      if (dp[b].length === 0) continue
+
+      const nb = b + itemCost
+      if (nb > budget) continue
+
+      for (const sol of dp[b]) {
+        const newItems = [...sol.items, p]
+        next[nb].push(evaluateItems(newItems))
+      }
+    }
+
+    for (let b = 0; b <= budget; b++) {
+      if (next[b].length > 1) next[b] = prune(next[b])
+    }
+
+    dp = next
+  }
+
+  const all = dp.flat()
+  const pareto = paretoFront(all)
+
+  pareto.sort(
+    (a, b) =>
+      b.sustainability - a.sustainability || a.totalPrice - b.totalPrice
   )
+
+  return pareto
+}
 
 /* ======================================================
   SUSTITUCIONES (POST-OPTIMIZACIÓN)
@@ -261,20 +232,15 @@ const paretoFront = (solutions) =>
 const detectSubstitutions = (optimizedItems, allProducts) => {
   const subs = []
 
-  optimizedItems.forEach(item => {
-    const baseScore = sustainabilityUtility(
-      item.eco_score,
-      item.social_score
-    )
+  optimizedItems.forEach((item) => {
+    const baseScore = sustainabilityUtility(item.eco_score, item.social_score)
 
-    const better = allProducts.find(p =>
-      p.id !== item.id &&
-      p.category === item.category &&
-      p.price <= item.price &&
-      sustainabilityUtility(
-        p.eco_score,
-        p.social_score
-      ) > baseScore
+    const better = allProducts.find(
+      (p) =>
+        p.id !== item.id &&
+        p.category === item.category &&
+        p.price <= item.price &&
+        sustainabilityUtility(p.eco_score, p.social_score) > baseScore
     )
 
     if (better) {
@@ -299,7 +265,7 @@ app.get('/api/products', async (_, res) => {
     `SELECT
        id,
        name,
-       barcode,                         
+       barcode,
        price,
        eco_score   AS "ecoScore",
        social_score AS "socialScore",
@@ -311,7 +277,6 @@ app.get('/api/products', async (_, res) => {
 
   res.json({ products: r.rows })
 })
-
 
 const translateToSpanish = async (text, source = 'auto') => {
   try {
@@ -349,7 +314,7 @@ app.post('/api/seed-openfood', async (_, res) => {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'LiquiVerde/1.0',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     })
 
@@ -364,29 +329,16 @@ app.post('/api/seed-openfood', async (_, res) => {
     for (const p of data.products) {
       let name = null
 
-      // PRIORIDAD CORRECTA POR IDIOMA
       if (p.product_name_es || p.generic_name_es) {
         name = p.product_name_es || p.generic_name_es
       } else if (p.product_name_fr || p.generic_name_fr) {
-        name = await translateToSpanish(
-          p.product_name_fr || p.generic_name_fr,
-          'fr'
-        )
+        name = await translateToSpanish(p.product_name_fr || p.generic_name_fr, 'fr')
       } else if (p.product_name_en || p.generic_name_en) {
-        name = await translateToSpanish(
-          p.product_name_en || p.generic_name_en,
-          'en'
-        )
+        name = await translateToSpanish(p.product_name_en || p.generic_name_en, 'en')
       } else if (p.product_name_ar || p.generic_name_ar) {
-        name = await translateToSpanish(
-          p.product_name_ar || p.generic_name_ar,
-          'ar'
-        )
+        name = await translateToSpanish(p.product_name_ar || p.generic_name_ar, 'ar')
       } else if (p.product_name || p.generic_name) {
-        name = await translateToSpanish(
-          p.product_name || p.generic_name,
-          'auto'
-        )
+        name = await translateToSpanish(p.product_name || p.generic_name, 'auto')
       } else {
         continue
       }
@@ -408,76 +360,58 @@ app.post('/api/seed-openfood', async (_, res) => {
           estimateEcoScore(p),
           estimateSocialScore(p),
           getMainCategory(p.categories_tags),
-          p.image_front_url ||
-            p.image_url ||
-            p.image_small_url ||
-            null,
+          p.image_front_url || p.image_url || p.image_small_url || null,
         ]
       )
 
       inserted++
 
-      // delay suave
-      await new Promise(r => setTimeout(r, 150))
+      await new Promise((r) => setTimeout(r, 150))
     }
   }
 
   res.json({ inserted })
 })
 
-
 app.post('/api/optimize', async (req, res) => {
   const { budget, items } = req.body
 
-  const db = await pool.query(
-    'SELECT * FROM products WHERE id = ANY($1)',
-    [items.map(i => i.id)]
-  )
+  const db = await pool.query('SELECT * FROM products WHERE id = ANY($1)', [
+    items.map((i) => i.id),
+  ])
 
-  const enriched = db.rows.map(p => ({
+  const enriched = db.rows.map((p) => ({
     ...p,
-    quantity: items.find(i => i.id === p.id).quantity,
+    quantity: items.find((i) => i.id === p.id).quantity,
   }))
 
-  const originalTotal = enriched.reduce(
-    (s, p) => s + p.price * p.quantity,
-    0
-  )
+  const originalTotal = enriched.reduce((s, p) => s + p.price * p.quantity, 0)
 
-  const solutions = [
-    optimizeByObjective(enriched, budget, 'sustainability'),
-    optimizeByObjective(enriched, budget, 'price'),
-  ].map(evaluateSolution)
+  const pareto = paretoOptimize(enriched, budget)
 
-  const pareto = paretoFront(solutions)
+  const chosen = pareto[0] || evaluateItems([])
 
-  const chosen = pareto.sort(
-    (a, b) => b.sustainability - a.sustainability
-  )[0]
+  const allProducts = (await pool.query('SELECT * FROM products')).rows
 
-  const allProducts = (await pool.query(
-    'SELECT * FROM products'
-  )).rows
-
-  const substitutions = detectSubstitutions(
-    chosen.items,
-    allProducts
-  )
+  const substitutions = detectSubstitutions(chosen.items, allProducts)
 
   res.json({
     originalTotal,
     optimized: chosen.items,
     substitutions,
+    pareto: pareto.map((p) => ({
+      totalPrice: p.totalPrice,
+      sustainability: p.sustainability,
+    })),
   })
 })
 
 app.get('/api/products/barcode/:code', async (req, res) => {
   const { code } = req.params
 
-  const r = await pool.query(
-    'SELECT * FROM products WHERE barcode = $1 LIMIT 1',
-    [code]
-  )
+  const r = await pool.query('SELECT * FROM products WHERE barcode = $1 LIMIT 1', [
+    code,
+  ])
 
   if (r.rows.length === 0) {
     return res.status(404).json({
@@ -488,7 +422,4 @@ app.get('/api/products/barcode/:code', async (req, res) => {
   res.json(r.rows[0])
 })
 
-
-app.listen(PORT, () =>
-  console.log(`Backend listo en http://localhost:${PORT}`)
-)
+app.listen(PORT, () => console.log(`Backend listo en http://localhost:${PORT}`))
