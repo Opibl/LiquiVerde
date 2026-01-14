@@ -161,6 +161,44 @@ const getMainCategory = (categories = []) => {
 }
 
 /* ======================================================
+  EXPANDIR / AGRUPAR CANTIDADES (OPTIMIZA UNIDADES)
+====================================================== */
+
+const expandToUnits = (items) => {
+  const expanded = []
+
+  for (const p of items) {
+    const q = Math.max(0, Number(p.quantity) || 0)
+
+    for (let k = 0; k < q; k++) {
+      expanded.push({
+        ...p,
+        quantity: 1,
+        unitKey: `${p.id}-${k}`, // id único por unidad
+      })
+    }
+  }
+
+  return expanded
+}
+
+const groupUnitsBack = (items) => {
+  const map = new Map()
+
+  for (const p of items) {
+    const key = p.id
+
+    if (!map.has(key)) {
+      map.set(key, { ...p, quantity: 0 })
+    }
+
+    map.get(key).quantity += 1
+  }
+
+  return Array.from(map.values())
+}
+
+/* ======================================================
   OPTIMIZACIÓN MULTIOBJETIVO REAL (PARETO DP)
 ====================================================== */
 
@@ -180,7 +218,9 @@ const dominates = (a, b) =>
   (a.totalPrice < b.totalPrice || a.sustainability > b.sustainability)
 
 const paretoFront = (solutions) =>
-  solutions.filter((s1) => !solutions.some((s2) => s2 !== s1 && dominates(s2, s1)))
+  solutions.filter(
+    (s1) => !solutions.some((s2) => s2 !== s1 && dominates(s2, s1))
+  )
 
 const paretoOptimize = (items, budget) => {
   let dp = Array.from({ length: budget + 1 }, () => [])
@@ -332,11 +372,20 @@ app.post('/api/seed-openfood', async (_, res) => {
       if (p.product_name_es || p.generic_name_es) {
         name = p.product_name_es || p.generic_name_es
       } else if (p.product_name_fr || p.generic_name_fr) {
-        name = await translateToSpanish(p.product_name_fr || p.generic_name_fr, 'fr')
+        name = await translateToSpanish(
+          p.product_name_fr || p.generic_name_fr,
+          'fr'
+        )
       } else if (p.product_name_en || p.generic_name_en) {
-        name = await translateToSpanish(p.product_name_en || p.generic_name_en, 'en')
+        name = await translateToSpanish(
+          p.product_name_en || p.generic_name_en,
+          'en'
+        )
       } else if (p.product_name_ar || p.generic_name_ar) {
-        name = await translateToSpanish(p.product_name_ar || p.generic_name_ar, 'ar')
+        name = await translateToSpanish(
+          p.product_name_ar || p.generic_name_ar,
+          'ar'
+        )
       } else if (p.product_name || p.generic_name) {
         name = await translateToSpanish(p.product_name || p.generic_name, 'auto')
       } else {
@@ -387,17 +436,23 @@ app.post('/api/optimize', async (req, res) => {
 
   const originalTotal = enriched.reduce((s, p) => s + p.price * p.quantity, 0)
 
-  const pareto = paretoOptimize(enriched, budget)
+  // 1) Expandir cantidades a unidades (quantity = 1)
+  const expanded = expandToUnits(enriched)
 
+  // 2) Optimizar sobre unidades
+  const pareto = paretoOptimize(expanded, budget)
   const chosen = pareto[0] || evaluateItems([])
+
+  // 3) Reagrupar unidades a cantidades por producto
+  const groupedChosenItems = groupUnitsBack(chosen.items)
 
   const allProducts = (await pool.query('SELECT * FROM products')).rows
 
-  const substitutions = detectSubstitutions(chosen.items, allProducts)
+  const substitutions = detectSubstitutions(groupedChosenItems, allProducts)
 
   res.json({
     originalTotal,
-    optimized: chosen.items,
+    optimized: groupedChosenItems,
     substitutions,
     pareto: pareto.map((p) => ({
       totalPrice: p.totalPrice,
@@ -409,9 +464,10 @@ app.post('/api/optimize', async (req, res) => {
 app.get('/api/products/barcode/:code', async (req, res) => {
   const { code } = req.params
 
-  const r = await pool.query('SELECT * FROM products WHERE barcode = $1 LIMIT 1', [
-    code,
-  ])
+  const r = await pool.query(
+    'SELECT * FROM products WHERE barcode = $1 LIMIT 1',
+    [code]
+  )
 
   if (r.rows.length === 0) {
     return res.status(404).json({
