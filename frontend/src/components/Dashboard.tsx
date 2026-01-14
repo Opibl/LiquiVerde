@@ -31,11 +31,14 @@ interface Props {
   products: DashboardProduct[]
   budget: number
   originalTotal: number
+  adjustedTotal: number
 }
 
 const Dashboard: React.FC<Props> = ({
   products,
+  budget,
   originalTotal,
+  adjustedTotal,
 }) => {
   /* =========================
      Totales
@@ -45,12 +48,16 @@ const Dashboard: React.FC<Props> = ({
     0
   )
 
-  const ahorroReal = originalTotal - optimizedTotal
+  const ahorroVsOriginal = originalTotal - optimizedTotal
+  const ahorroVsAdjusted = adjustedTotal - optimizedTotal
 
   const totalUnits = products.reduce(
     (sum, p) => sum + (p.quantity || 0),
     0
   )
+
+  const dentroPresupuesto = optimizedTotal <= budget
+  const diferenciaPresupuesto = budget - optimizedTotal
 
   /* =========================
      Eco score promedio
@@ -58,9 +65,7 @@ const Dashboard: React.FC<Props> = ({
   const ecoAvgRaw =
     products.reduce(
       (sum, p) =>
-        sum +
-        (Number(p.ecoScore) || 0) *
-          (p.quantity || 0),
+        sum + (Number(p.ecoScore) || 0) * (p.quantity || 0),
       0
     ) / (totalUnits || 1)
 
@@ -80,14 +85,14 @@ const Dashboard: React.FC<Props> = ({
      DATA CHARTS
   ========================= */
 
-  // Gráfico barras
+  // Gráfico barras (3 etapas)
   const spendingData = {
-    labels: ['Original', 'Optimizado'],
+    labels: ['Original', 'Ajustado', 'Optimizado'],
     datasets: [
       {
         label: 'Gasto',
-        data: [originalTotal, optimizedTotal],
-        backgroundColor: ['#ef4444', '#22c55e'],
+        data: [originalTotal, adjustedTotal, optimizedTotal],
+        backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
       },
     ],
   }
@@ -117,8 +122,18 @@ const Dashboard: React.FC<Props> = ({
       {/* KPIs */}
       <section className="kpis">
         <div className="kpi">
+          <span>Presupuesto</span>
+          <strong>{formatCLP(budget)}</strong>
+        </div>
+
+        <div className="kpi">
           <span>Gasto original</span>
           <strong>{formatCLP(originalTotal)}</strong>
+        </div>
+
+        <div className="kpi">
+          <span>Gasto ajustado</span>
+          <strong>{formatCLP(adjustedTotal)}</strong>
         </div>
 
         <div className="kpi">
@@ -127,13 +142,30 @@ const Dashboard: React.FC<Props> = ({
         </div>
 
         <div className="kpi">
-          <span>Ahorro real</span>
-          <strong
-            className={
-              ahorroReal > 0 ? 'positive' : 'negative'
-            }
-          >
-            {formatCLP(ahorroReal)}
+          <span>Dentro del presupuesto</span>
+          <strong className={dentroPresupuesto ? 'positive' : 'negative'}>
+            {dentroPresupuesto ? 'Sí ✅' : 'No ❌'}
+          </strong>
+        </div>
+
+        <div className="kpi">
+          <span>Diferencia vs presupuesto</span>
+          <strong className={diferenciaPresupuesto >= 0 ? 'positive' : 'negative'}>
+            {formatCLP(diferenciaPresupuesto)}
+          </strong>
+        </div>
+
+        <div className="kpi">
+          <span>Ahorro vs original</span>
+          <strong className={ahorroVsOriginal > 0 ? 'positive' : 'negative'}>
+            {formatCLP(ahorroVsOriginal)}
+          </strong>
+        </div>
+
+        <div className="kpi">
+          <span>Ahorro vs ajustado</span>
+          <strong className={ahorroVsAdjusted > 0 ? 'positive' : 'negative'}>
+            {formatCLP(ahorroVsAdjusted)}
           </strong>
         </div>
 
@@ -173,7 +205,6 @@ const Dashboard: React.FC<Props> = ({
         </p>
       </section>
 
-
       {/* Tabla final */}
       <section className="table">
         <h3>Lista final optimizada</h3>
@@ -193,12 +224,8 @@ const Dashboard: React.FC<Props> = ({
               <tr key={p.id}>
                 <td data-label="Producto">{p.name}</td>
                 <td data-label="Cantidad">x{p.quantity}</td>
-                <td data-label="Total">
-                  {formatCLP(p.totalPrice)}
-                </td>
-                <td data-label="Eco score">
-                  {p.ecoScore ?? '-'}
-                </td>
+                <td data-label="Total">{formatCLP(p.totalPrice)}</td>
+                <td data-label="Eco score">{p.ecoScore ?? '-'}</td>
               </tr>
             ))}
           </tbody>
@@ -213,9 +240,9 @@ const Dashboard: React.FC<Props> = ({
 
       {/* Nota */}
       <p className="dashboard-note">
-        El ahorro se calcula comparando la compra
-        original con la compra optimizada, no con
-        el presupuesto máximo.
+        El gasto original es la lista del usuario. <br />
+        El gasto ajustado es cuando se reducen cantidades para cumplir el presupuesto. <br />
+        El gasto optimizado es el resultado final con impacto sostenible.
       </p>
     </div>
   )

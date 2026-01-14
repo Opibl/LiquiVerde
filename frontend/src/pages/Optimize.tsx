@@ -69,6 +69,8 @@ const Optimize: React.FC = () => {
 
   const [result, setResult] = useState<OptimizedProduct[]>([])
   const [originalTotal, setOriginalTotal] = useState(0)
+  const [adjustedTotal, setAdjustedTotal] = useState(0)
+
   const [substitutions, setSubstitutions] = useState<Substitution[]>([])
 
   const [loading, setLoading] = useState(true)
@@ -230,6 +232,8 @@ const Optimize: React.FC = () => {
 
       setResult(normalized)
       setOriginalTotal(data.originalTotal)
+      setAdjustedTotal(data.adjustedTotal)
+
 
       const normalizedSubstitutions: Substitution[] =
         (data.substitutions || []).map((s: any) => ({
@@ -460,11 +464,13 @@ const Optimize: React.FC = () => {
         {hasResult && (
           <section className="card">
             <h2>3️⃣ Dashboard de impacto</h2>
-            <Dashboard
-              products={result}
-              budget={budget!}
-              originalTotal={originalTotal}
-            />
+           <Dashboard
+            products={result}
+            budget={budget!}
+            originalTotal={originalTotal}
+            adjustedTotal={adjustedTotal}
+          />
+
           </section>
         )}
 

@@ -256,6 +256,52 @@ const detectSubstitutions = (optimizedItems, allProducts) => {
   return subs
 }
 
+
+const reduceQuantitiesToFitBudget = (items, budget) => {
+  const adjusted = items.map(p => ({ ...p }))
+
+  const totalPrice = (arr) =>
+    arr.reduce((s, p) => s + p.price * p.quantity, 0)
+
+  // si ya cabe, no hacer nada
+  let currentTotal = totalPrice(adjusted)
+  if (currentTotal <= budget) {
+    return { adjusted, adjustments: [] }
+  }
+
+  // ordenar por "menos sostenible primero"
+  const sorted = [...adjusted].sort((a, b) => {
+    const ua = sustainabilityUtility(a.eco_score, a.social_score)
+    const ub = sustainabilityUtility(b.eco_score, b.social_score)
+    return ua - ub
+  })
+
+  const adjustments = []
+
+  for (const p of sorted) {
+    const originalQty = p.quantity
+
+    while (p.quantity > 1 && currentTotal > budget) {
+      p.quantity -= 1
+      currentTotal -= p.price
+    }
+
+    if (p.quantity !== originalQty) {
+      adjustments.push({
+        id: p.id,
+        name: p.name,
+        from: originalQty,
+        to: p.quantity,
+      })
+    }
+
+    if (currentTotal <= budget) break
+  }
+
+  return { adjusted, adjustments }
+}
+
+
 /* ======================================================
   ROUTES
 ====================================================== */
@@ -380,31 +426,44 @@ app.post('/api/optimize', async (req, res) => {
     items.map((i) => i.id),
   ])
 
-  const enriched = db.rows.map((p) => ({
+  // 1) Productos con cantidades originales del usuario
+  let enriched = db.rows.map((p) => ({
     ...p,
     quantity: items.find((i) => i.id === p.id).quantity,
   }))
 
+  // 2) Total original (ANTES de ajustar)
   const originalTotal = enriched.reduce((s, p) => s + p.price * p.quantity, 0)
 
-  const pareto = paretoOptimize(enriched, budget)
+  // 3) Si no alcanza presupuesto => bajar cantidades automáticamente
+  const { adjusted, adjustments } = reduceQuantitiesToFitBudget(enriched, budget)
+  enriched = adjusted
 
+  // 4) Total ajustado (DESPUÉS de ajustar cantidades)
+  const adjustedTotal = enriched.reduce((s, p) => s + p.price * p.quantity, 0)
+
+  // 5) Optimización Pareto con cantidades ajustadas
+  const pareto = paretoOptimize(enriched, budget)
   const chosen = pareto[0] || evaluateItems([])
 
+  // 6) Sustituciones sugeridas (NO se aplican solas)
   const allProducts = (await pool.query('SELECT * FROM products')).rows
-
   const substitutions = detectSubstitutions(chosen.items, allProducts)
 
+  // 7) Respuesta final
   res.json({
     originalTotal,
+    adjustedTotal,
     optimized: chosen.items,
     substitutions,
+    adjustments,
     pareto: pareto.map((p) => ({
       totalPrice: p.totalPrice,
       sustainability: p.sustainability,
     })),
   })
 })
+
 
 app.get('/api/products/barcode/:code', async (req, res) => {
   const { code } = req.params
