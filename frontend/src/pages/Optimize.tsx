@@ -35,6 +35,31 @@ type Substitution = {
   reason: string
 }
 
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
+
+const sustainabilityUtilityUI = (
+  eco?: number,
+  social?: number,
+  weights = { eco: 0.6, social: 0.4 },
+  rho = 0.5
+) => {
+  const e = clamp01((eco ?? 50) / 100)
+  const s = clamp01((social ?? 50) / 100)
+
+  return Math.pow(
+    weights.eco * Math.pow(e, rho) + weights.social * Math.pow(s, rho),
+    1 / rho
+  )
+}
+
+const getSustainabilityLabel = (u: number) => {
+  if (u >= 0.7) return { text: 'Alta', emoji: '🟢' }
+  if (u >= 0.4) return { text: 'Media', emoji: '🟡' }
+  return { text: 'Baja', emoji: '🔴' }
+}
+
+
 const Optimize: React.FC = () => {
   const [budgetDraft, setBudgetDraft] = useState('')
   const [budget, setBudget] = useState<number | null>(null)
@@ -65,6 +90,13 @@ const Optimize: React.FC = () => {
 
 
   const hasResult = result.length > 0
+  const worstProducts = [...result]
+  .map(p => ({
+    ...p,
+    utility: sustainabilityUtilityUI(p.ecoScore, p.socialScore),
+  }))
+  .sort((a, b) => a.utility - b.utility)
+  .slice(0, 3)
 
   /* =========================
      Cargar productos
@@ -435,6 +467,41 @@ const Optimize: React.FC = () => {
             />
           </section>
         )}
+
+        {hasResult && worstProducts.length > 0 && (
+          <section className="card">
+            <h2>🚨 Productos menos sostenibles</h2>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Eco</th>
+                  <th>Social</th>
+                  <th>Sostenibilidad</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {worstProducts.map(p => {
+                  const label = getSustainabilityLabel(p.utility)
+
+                  return (
+                    <tr key={p.id}>
+                      <td>{p.name}</td>
+                      <td>{p.ecoScore ?? '-'}</td>
+                      <td>{p.socialScore ?? '-'}</td>
+                      <td>
+                        {label.emoji} {label.text} ({Math.round(p.utility * 100)}%)
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </section>
+        )}
+
       </div>
 
       {hasResult && (
