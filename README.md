@@ -34,6 +34,8 @@ FUNCIONALIDADES PRINCIPALES
 - Sugerencias inteligentes de sustitución
 - Dashboard de impacto (ahorro y sostenibilidad)
 - Comparación entre lista original y lista optimizada
+- Ajuste automático de cantidades para cumplir presupuesto (si es necesario)
+
 
 
 INSTALACIÓN Y EJECUCIÓN LOCAL
@@ -165,9 +167,12 @@ Las prioridades del algoritmo son:
 3. Utilizar el precio únicamente como restricción y criterio secundario
    de comparación entre soluciones eficientes.
 
-Las cantidades de productos son definidas explícitamente por el usuario
-y se consideran fijas durante la optimización. Cada producto se modela
-como un ítem compuesto (precio × cantidad).
+Las cantidades de productos son definidas explícitamente por el usuario y se consideran como un máximo permitido durante la optimización.
+
+Para permitir ajustes finos, cada producto se expande internamente a unidades individuales (quantity = 1). Esto permite que el algoritmo reduzca cantidades (por ejemplo, de 3 a 1) si el presupuesto no alcanza, en lugar de eliminar el producto completo.
+
+Adicionalmente, si el presupuesto lo permite, el sistema intenta mantener al menos 1 unidad de cada producto, priorizando reducir cantidades antes que eliminar productos completamente.
+
 
 Para la optimización se generan múltiples soluciones candidatas con
 objetivos distintos (maximización de sostenibilidad y minimización de precio).
@@ -215,7 +220,7 @@ El dashboard muestra:
 - Nivel de sostenibilidad (Bajo / Medio / Alto)
 
 También se muestra una comparación entre la lista original y la lista
-optimizada para identificar productos eliminados.
+optimizada para identificar productos eliminados o con cantidad reducida.
 
 
 USO DE LA APLICACIÓN
