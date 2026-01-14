@@ -114,34 +114,6 @@ const Dashboard: React.FC<Props> = ({
   ========================= */
   return (
     <div className="dashboard">
-      {/* KPIs */}
-      <section className="kpis">
-        <div className="kpi">
-          <span>Gasto original</span>
-          <strong>{formatCLP(originalTotal)}</strong>
-        </div>
-
-        <div className="kpi">
-          <span>Gasto optimizado</span>
-          <strong>{formatCLP(optimizedTotal)}</strong>
-        </div>
-
-        <div className="kpi">
-          <span>Ahorro real</span>
-          <strong
-            className={
-              ahorroReal > 0 ? 'positive' : 'negative'
-            }
-          >
-            {formatCLP(ahorroReal)}
-          </strong>
-        </div>
-
-        <div className="kpi">
-          <span>Eco score promedio</span>
-          <strong>{ecoAvg.toFixed(1)}</strong>
-        </div>
-      </section>
 
       {/* Tabla final */}
       <section className="table">
@@ -173,6 +145,35 @@ const Dashboard: React.FC<Props> = ({
           </tbody>
         </table>
       </section>
+      {/* KPIs */}
+      <section className="kpis">
+        <div className="kpi">
+          <span>Gasto original</span>
+          <strong>{formatCLP(originalTotal)}</strong>
+        </div>
+
+        <div className="kpi">
+          <span>Gasto optimizado</span>
+          <strong>{formatCLP(optimizedTotal)}</strong>
+        </div>
+
+        <div className="kpi">
+          <span>Ahorro real</span>
+          <strong
+            className={
+              ahorroReal > 0 ? 'positive' : 'negative'
+            }
+          >
+            {formatCLP(ahorroReal)}
+          </strong>
+        </div>
+
+        <div className="kpi">
+          <span>Eco score promedio</span>
+          <strong>{ecoAvg.toFixed(1)}</strong>
+        </div>
+      </section>
+
 
       {/* ===== GRÁFICO BARRAS ===== */}
       <section className="chart">
