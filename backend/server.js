@@ -198,6 +198,21 @@ const groupUnitsBack = (items) => {
   return Array.from(map.values())
 }
 
+const ensureMinOnePerProduct = (enriched, budget) => {
+  // intenta comprar 1 unidad de cada producto (si se puede)
+  const base = enriched.map((p) => ({ ...p, quantity: 1 }))
+
+  const baseCost = base.reduce((s, p) => s + p.price * p.quantity, 0)
+
+  // si alcanza, perfecto
+  if (baseCost <= budget) {
+    return { feasible: true, baseItems: base, baseCost }
+  }
+
+  // si NO alcanza, no podemos garantizar 1 de cada uno
+  return { feasible: false, baseItems: [], baseCost }
+}
+
 /* ======================================================
   OPTIMIZACIÓN MULTIOBJETIVO REAL (PARETO DP)
 ====================================================== */
@@ -436,30 +451,84 @@ app.post('/api/optimize', async (req, res) => {
 
   const originalTotal = enriched.reduce((s, p) => s + p.price * p.quantity, 0)
 
-  // 1) Expandir cantidades a unidades (quantity = 1)
-  const expanded = expandToUnits(enriched)
-
-  // 2) Optimizar sobre unidades
-  const pareto = paretoOptimize(expanded, budget)
-  const chosen = pareto[0] || evaluateItems([])
-
-  // 3) Reagrupar unidades a cantidades por producto
-  const groupedChosenItems = groupUnitsBack(chosen.items)
-
   const allProducts = (await pool.query('SELECT * FROM products')).rows
 
-  const substitutions = detectSubstitutions(groupedChosenItems, allProducts)
+  // 0) Intentar asegurar mínimo 1 por producto
+  const { feasible, baseItems, baseCost } = ensureMinOnePerProduct(
+    enriched,
+    budget
+  )
+
+  // Si NO alcanza ni para 1 unidad de cada producto,
+  // entonces se optimiza libremente (como antes)
+  if (!feasible) {
+    const expanded = expandToUnits(enriched)
+    const pareto = paretoOptimize(expanded, budget)
+    const chosen = pareto[0] || evaluateItems([])
+    const groupedChosenItems = groupUnitsBack(chosen.items)
+
+    const substitutions = detectSubstitutions(groupedChosenItems, allProducts)
+
+    return res.json({
+      originalTotal,
+      optimized: groupedChosenItems,
+      substitutions,
+      pareto: pareto.map((p) => ({
+        totalPrice: p.totalPrice,
+        sustainability: p.sustainability,
+      })),
+      note:
+        'Presupuesto insuficiente para mantener 1 unidad de cada producto. Se aplicó optimización libre.',
+    })
+  }
+
+  // 1) Si sí alcanza para 1 unidad de cada producto:
+  // usamos eso como "base" y optimizamos el presupuesto restante
+  const remainingBudget = budget - baseCost
+
+  // items "extra" = cantidad restante (quantity - 1)
+  const extras = enriched
+    .map((p) => ({
+      ...p,
+      quantity: Math.max(0, (Number(p.quantity) || 0) - 1),
+    }))
+    .filter((p) => p.quantity > 0)
+
+  // expandir extras a unidades
+  const expandedExtras = expandToUnits(extras)
+
+  // optimizar SOLO extras con el presupuesto restante
+  const paretoExtras = paretoOptimize(expandedExtras, remainingBudget)
+  const chosenExtras = paretoExtras[0] || evaluateItems([])
+
+  // juntar base + extras elegidos
+  const combined = [...baseItems, ...chosenExtras.items]
+  const groupedCombined = groupUnitsBack(combined)
+
+  const substitutions = detectSubstitutions(groupedCombined, allProducts)
+
+  // pareto final (sumando base) para mostrarlo en frontend
+  const paretoFinal = paretoExtras.map((p) => ({
+    totalPrice: p.totalPrice + baseCost,
+    sustainability:
+      p.sustainability +
+      baseItems.reduce(
+        (s, it) =>
+          s + sustainabilityUtility(it.eco_score, it.social_score) * it.quantity,
+        0
+      ),
+  }))
 
   res.json({
     originalTotal,
-    optimized: groupedChosenItems,
+    optimized: groupedCombined,
     substitutions,
-    pareto: pareto.map((p) => ({
-      totalPrice: p.totalPrice,
-      sustainability: p.sustainability,
-    })),
+    pareto: paretoFinal,
+    note:
+      'Se mantuvo mínimo 1 unidad de cada producto y se optimizó el resto según sostenibilidad y presupuesto.',
   })
 })
+
 
 app.get('/api/products/barcode/:code', async (req, res) => {
   const { code } = req.params
