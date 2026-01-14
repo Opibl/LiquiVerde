@@ -27,7 +27,6 @@ type OptimizedProduct = {
   imageUrl?: string
 }
 
-
 type Substitution = {
   fromId: number
   fromName: string
@@ -35,6 +34,12 @@ type Substitution = {
   reason: string
 }
 
+type Adjustment = {
+  id: number
+  name: string
+  from: number
+  to: number
+}
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
 
@@ -59,7 +64,6 @@ const getSustainabilityLabel = (u: number) => {
   return { text: 'Baja', emoji: '🔴' }
 }
 
-
 const Optimize: React.FC = () => {
   const [budgetDraft, setBudgetDraft] = useState('')
   const [budget, setBudget] = useState<number | null>(null)
@@ -82,23 +86,29 @@ const Optimize: React.FC = () => {
   const [barcodeError, setBarcodeError] = useState<string | null>(null)
   const [showScanner, setShowScanner] = useState(false)
 
+  // ✅ NUEVO: ajustes pendientes (para confirmar con el usuario)
+  const [pendingAdjustments, setPendingAdjustments] = useState<Adjustment[]>([])
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
 
   const resetOptimization = () => {
     setResult([])
     setSubstitutions([])
     setOriginalList([])
     setOriginalTotal(0)
+    setAdjustedTotal(0)
+    setPendingAdjustments([])
+    setShowAdjustModal(false)
   }
 
-
   const hasResult = result.length > 0
+
   const worstProducts = [...result]
-  .map(p => ({
-    ...p,
-    utility: sustainabilityUtilityUI(p.ecoScore, p.socialScore),
-  }))
-  .sort((a, b) => a.utility - b.utility)
-  .slice(0, 3)
+    .map(p => ({
+      ...p,
+      utility: sustainabilityUtilityUI(p.ecoScore, p.socialScore),
+    }))
+    .sort((a, b) => a.utility - b.utility)
+    .slice(0, 3)
 
   /* =========================
      Cargar productos
@@ -109,7 +119,6 @@ const Optimize: React.FC = () => {
       .catch(() => setError('Error cargando productos'))
       .finally(() => setLoading(false))
   }, [])
-
   /* =========================
      Cantidades
   ========================= */
@@ -119,9 +128,7 @@ const Optimize: React.FC = () => {
     if (existing) {
       setSelected(
         selected.map(p =>
-          p.id === product.id
-            ? { ...p, quantity: p.quantity + 1 }
-            : p
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
         )
       )
     } else {
@@ -140,9 +147,7 @@ const Optimize: React.FC = () => {
   const removeProduct = (id: number) => {
     setSelected(
       selected
-        .map(p =>
-          p.id === id ? { ...p, quantity: p.quantity - 1 } : p
-        )
+        .map(p => (p.id === id ? { ...p, quantity: p.quantity - 1 } : p))
         .filter(p => p.quantity > 0)
     )
   }
@@ -151,14 +156,11 @@ const Optimize: React.FC = () => {
     setSelected(selected.filter(p => p.id !== id))
   }
 
-
   const searchByBarcode = async () => {
     if (!barcode) return
 
     try {
-      const res = await fetch(
-        `${BACKEND_URL}/api/products/barcode/${barcode}`
-      )
+      const res = await fetch(`${BACKEND_URL}/api/products/barcode/${barcode}`)
 
       if (!res.ok) {
         setBarcodeError('Producto no encontrado')
@@ -195,9 +197,12 @@ const Optimize: React.FC = () => {
       return
     }
 
-    setOriginalList(overrideSelected || selected)
+    const listToUse = overrideSelected || selected
 
-    const itemsToSend = (overrideSelected || selected).map(p => ({
+    // Guardamos lista original del usuario (antes de ajustes)
+    setOriginalList(listToUse)
+
+    const itemsToSend = listToUse.map(p => ({
       id: p.id,
       quantity: p.quantity,
     }))
@@ -216,27 +221,31 @@ const Optimize: React.FC = () => {
 
       const data = await res.json()
 
-      const normalized: OptimizedProduct[] = data.optimized.map(
-        (p: any) => ({
-          id: p.id,
-          name: p.name,
-          quantity: p.quantity,
-          unitPrice: p.price,
-          totalPrice: p.price * p.quantity,
-          ecoScore: p.eco_score,
-          socialScore: p.social_score,
-          imageUrl: p.image_url,
-        })
-      )
+      // ✅ SI backend hizo ajustes => mostramos confirmación y paramos aquí
+      if (data.adjustments && data.adjustments.length > 0) {
+        setPendingAdjustments(data.adjustments)
+        setShowAdjustModal(true)
+        return
+      }
 
+      // Normalizar resultado optimizado
+      const normalized: OptimizedProduct[] = (data.optimized || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        quantity: p.quantity,
+        unitPrice: p.price,
+        totalPrice: p.price * p.quantity,
+        ecoScore: p.eco_score,
+        socialScore: p.social_score,
+        imageUrl: p.image_url,
+      }))
 
       setResult(normalized)
-      setOriginalTotal(data.originalTotal)
-      setAdjustedTotal(data.adjustedTotal)
+      setOriginalTotal(data.originalTotal || 0)
+      setAdjustedTotal(data.adjustedTotal || 0)
 
-
-      const normalizedSubstitutions: Substitution[] =
-        (data.substitutions || []).map((s: any) => ({
+      const normalizedSubstitutions: Substitution[] = (data.substitutions || []).map(
+        (s: any) => ({
           fromId: s.fromId,
           fromName: s.fromName,
           reason: s.reason,
@@ -245,14 +254,13 @@ const Optimize: React.FC = () => {
             name: s.toProduct.name,
             quantity: s.quantity ?? 1,
             unitPrice: s.toProduct.price,
-            totalPrice:
-              s.toProduct.price * (s.quantity ?? 1),
+            totalPrice: s.toProduct.price * (s.quantity ?? 1),
             ecoScore: s.toProduct.eco_score,
             socialScore: s.toProduct.social_score,
             imageUrl: s.toProduct.image_url,
           },
-
-        }))
+        })
+      )
 
       setSubstitutions(normalizedSubstitutions)
     } catch (err) {
@@ -260,7 +268,28 @@ const Optimize: React.FC = () => {
       alert('Error al optimizar la compra')
     }
   }
- const acceptSubstitution = (s: Substitution) => {
+
+  // ✅ aplicar ajustes propuestos por backend
+  const applyAdjustmentsAndOptimize = () => {
+    const updatedSelected: SelectedProduct[] = selected.map(p => {
+      const adj = pendingAdjustments.find(a => a.id === p.id)
+      if (!adj) return p
+      return { ...p, quantity: adj.to }
+    })
+
+    setSelected(updatedSelected)
+    setShowAdjustModal(false)
+    setPendingAdjustments([])
+
+    optimize(updatedSelected)
+  }
+
+  const cancelAdjustments = () => {
+    setShowAdjustModal(false)
+    setPendingAdjustments([])
+  }
+
+  const acceptSubstitution = (s: Substitution) => {
     const updatedResult: OptimizedProduct[] = result.map(p =>
       p.id === s.fromId
         ? {
@@ -271,17 +300,13 @@ const Optimize: React.FC = () => {
         : p
     )
 
-    const newTotal = updatedResult.reduce(
-      (sum, p) => sum + p.totalPrice,
-      0
-    )
+    const newTotal = updatedResult.reduce((sum, p) => sum + p.totalPrice, 0)
 
     if (budget !== null && newTotal > budget) {
       alert('Esta sustitución supera el presupuesto disponible.')
       return
     }
 
-    // 🔄 actualizar selected ANTES de optimizar
     const updatedSelected: SelectedProduct[] = updatedResult.map(p => ({
       id: p.id,
       name: p.name,
@@ -292,12 +317,8 @@ const Optimize: React.FC = () => {
     setSelected(updatedSelected)
     setResult(updatedResult)
 
-    //RE-OPTIMIZAR automáticamente
     optimize(updatedSelected)
   }
-
-
-
 
   /* =========================
      Presupuesto
@@ -314,8 +335,6 @@ const Optimize: React.FC = () => {
     setBudgetConfirmed(true)
     resetOptimization()
   }
-
-
   /* =========================
      UI
   ========================= */
@@ -330,7 +349,7 @@ const Optimize: React.FC = () => {
         <section className="card">
           <h2>1️⃣ Presupuesto</h2>
 
-         <input
+          <input
             type="number"
             placeholder="Ej: 3000"
             value={budgetDraft}
@@ -341,18 +360,13 @@ const Optimize: React.FC = () => {
             }}
           />
 
-
-          <button
-            className="confirm-budget-btn"
-            onClick={confirmBudget}
-          >
+          <button className="confirm-budget-btn" onClick={confirmBudget}>
             Confirmar presupuesto
           </button>
 
           {budgetConfirmed && (
             <p>
-              Presupuesto confirmado:{' '}
-              <strong>${budget}</strong>
+              Presupuesto confirmado: <strong>${budget}</strong>
             </p>
           )}
         </section>
@@ -360,10 +374,8 @@ const Optimize: React.FC = () => {
         <section className="card">
           <h2>2️⃣ Seleccionar productos</h2>
 
-         <div className="barcode-section">
-            <label className="barcode-label">
-              📦 Escanear producto
-            </label>
+          <div className="barcode-section">
+            <label className="barcode-label">📦 Escanear producto</label>
 
             <div className="barcode-input-row">
               <input
@@ -387,12 +399,8 @@ const Optimize: React.FC = () => {
               </button>
             </div>
 
-            {barcodeError && (
-              <p className="barcode-error">{barcodeError}</p>
-            )}
+            {barcodeError && <p className="barcode-error">{barcodeError}</p>}
           </div>
-
-
 
           {!loading && !error && (
             <ProductSearch
@@ -405,6 +413,7 @@ const Optimize: React.FC = () => {
           )}
         </section>
 
+        {/* ✅ LISTA ORIGINAL */}
         {originalList.length > 0 && (
           <section className="card">
             <h2>Lista original</h2>
@@ -422,9 +431,7 @@ const Optimize: React.FC = () => {
 
               <tbody>
                 {originalList.map(p => {
-                  const stillPresent = result.some(
-                    r => r.id === p.id
-                  )
+                  const stillPresent = result.some(r => r.id === p.id)
 
                   return (
                     <tr
@@ -453,24 +460,60 @@ const Optimize: React.FC = () => {
         <button
           className="optimize-btn"
           onClick={() => optimize()}
-          disabled={
-            !budgetConfirmed ||
-            selected.length === 0
-          }
+          disabled={!budgetConfirmed || selected.length === 0}
         >
           Optimizar compra sostenible
         </button>
 
+        {/* ✅ MODAL / AVISO DE AJUSTES */}
+        {showAdjustModal && pendingAdjustments.length > 0 && (
+          <section className="card">
+            <h2>⚠️ Presupuesto insuficiente</h2>
+            <p>
+              Tu lista supera el presupuesto. Para poder optimizar, se recomienda bajar cantidades:
+            </p>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Antes</th>
+                  <th>Después</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingAdjustments.map(a => (
+                  <tr key={a.id}>
+                    <td>{a.name}</td>
+                    <td>x{a.from}</td>
+                    <td>x{a.to}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              <button onClick={applyAdjustmentsAndOptimize}>
+                ✅ Aceptar ajuste y optimizar
+              </button>
+
+              <button onClick={cancelAdjustments}>
+                ❌ Cancelar
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* DASHBOARD */}
         {hasResult && (
           <section className="card">
             <h2>3️⃣ Dashboard de impacto</h2>
-           <Dashboard
-            products={result}
-            budget={budget!}
-            originalTotal={originalTotal}
-            adjustedTotal={adjustedTotal}
-          />
-
+            <Dashboard
+              products={result}
+              budget={budget!}
+              originalTotal={originalTotal}
+              adjustedTotal={adjustedTotal}
+            />
           </section>
         )}
 
@@ -507,9 +550,9 @@ const Optimize: React.FC = () => {
             </table>
           </section>
         )}
-
       </div>
 
+      {/* Lista final */}
       {hasResult && (
         <FinalShoppingList
           products={result.map(p => ({
@@ -522,6 +565,7 @@ const Optimize: React.FC = () => {
         />
       )}
 
+      {/* Sustituciones */}
       {hasResult && substitutions.length > 0 && (
         <section className="card">
           <h2>🔁 Sugerencias de sustitución</h2>
@@ -542,10 +586,7 @@ const Optimize: React.FC = () => {
                   </p>
                   <p className="sub-reason">{s.reason}</p>
 
-                  <button
-                    className="accept-sub-btn"
-                    onClick={() => acceptSubstitution(s)}
-                  >
+                  <button className="accept-sub-btn" onClick={() => acceptSubstitution(s)}>
                     Aceptar sustitución
                   </button>
                 </div>
@@ -553,27 +594,6 @@ const Optimize: React.FC = () => {
             </div>
           ))}
         </section>
-      )}
-
-      {hasResult && originalList.length > 0 && (
-        <details className="card">
-          <summary>Ver lista original</summary>
-
-          <table>
-            <tbody>
-              {originalList.map(p => (
-                <tr key={p.id}>
-                  <td data-label="Producto">{p.name}</td>
-                  <td data-label="Cantidad">x{p.quantity}</td>
-                  <td data-label="Precio unitario">{p.unitPrice}</td>
-                  <td data-label="Total">
-                    {(p.unitPrice * p.quantity).toLocaleString('es-CL')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </details>
       )}
 
       {showScanner && (
@@ -585,7 +605,6 @@ const Optimize: React.FC = () => {
           onClose={() => setShowScanner(false)}
         />
       )}
-  
     </main>
   )
 }
